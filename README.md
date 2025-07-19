@@ -91,44 +91,6 @@ npm install
 npm start
 ```
 
-### 4. Environment Configuration
-
-#### Backend (.env)
-```env
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
-
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/mindbloom
-
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=7d
-
-# Auth0 Configuration
-AUTH0_DOMAIN=your-auth0-domain.auth0.com
-AUTH0_CLIENT_ID=your-auth0-client-id
-AUTH0_CLIENT_SECRET=your-auth0-client-secret
-AUTH0_AUDIENCE=your-auth0-audience
-
-# Google Gemini API Configuration
-GEMINI_API_KEY=your-gemini-api-key
-
-# File Upload Configuration
-MAX_FILE_SIZE=10485760
-UPLOAD_PATH=./uploads
-```
-
-#### Frontend (.env)
-```env
-REACT_APP_API_URL=http://localhost:5000
-REACT_APP_AUTH0_DOMAIN=your-auth0-domain.auth0.com
-REACT_APP_AUTH0_CLIENT_ID=your-auth0-client-id
-REACT_APP_AUTH0_AUDIENCE=your-auth0-audience
-```
-
 ## 📚 API Documentation
 
 ### Authentication Endpoints
