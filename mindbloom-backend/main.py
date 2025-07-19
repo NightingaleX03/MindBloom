@@ -7,9 +7,13 @@ import json
 from pathlib import Path
 import httpx
 import base64
+from dotenv import load_dotenv
 
-# Remove problematic router imports for now
-# from routers import auth, journal, ai, calendar, media, ribbon
+# Load environment variables
+load_dotenv()
+
+# Import routers
+from routers import interview_analysis, ai_training
 
 # Create data directory if it doesn't exist
 data_dir = Path("data")
@@ -50,6 +54,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(interview_analysis.router)
+app.include_router(ai_training.router)
 
 # Helper functions for JSON file operations
 def read_json_file(filename: str):

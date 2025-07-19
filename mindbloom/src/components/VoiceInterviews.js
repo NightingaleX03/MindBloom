@@ -87,6 +87,14 @@ const VoiceInterviews = ({ selectedPatient }) => {
   const [showCreateInterview, setShowCreateInterview] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [interviewResults, setInterviewResults] = useState(null);
+  const [showInterviewDemo, setShowInterviewDemo] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [interviewProgress, setInterviewProgress] = useState(0);
+  const [currentResponse, setCurrentResponse] = useState('');
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [realTimeFeedback, setRealTimeFeedback] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Mock data for demonstration
   const mockInterviews = [
@@ -213,6 +221,124 @@ const VoiceInterviews = ({ selectedPatient }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Interview questions for demo
+  const interviewQuestions = [
+    "Can you tell me about a special family tradition from your childhood?",
+    "What's one of your favorite memories with your parents or grandparents?",
+    "Do you remember a time when you felt really proud of something you accomplished?",
+    "What's a place that holds special meaning for you and why?",
+    "Can you share a story about a friend who was important to you growing up?"
+  ];
+
+  const [currentInterview, setCurrentInterview] = useState(null);
+
+  const startInterview = (interview) => {
+    setCurrentInterview(interview);
+    setShowInterviewDemo(true);
+    setCurrentQuestion(0);
+    setInterviewProgress(0);
+    setIsRecording(false);
+  };
+
+  const handleNextQuestion = () => {
+    if (currentQuestion < interviewQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setInterviewProgress(((currentQuestion + 1) / interviewQuestions.length) * 100);
+    } else {
+      // Interview completed
+      setShowInterviewDemo(false);
+      // Update interview status to completed
+      if (currentInterview) {
+        setInterviews(prev => prev.map(int => 
+          int.id === currentInterview.id 
+            ? { ...int, status: 'completed' }
+            : int
+        ));
+        setSelectedInterview({ ...currentInterview, status: 'completed' });
+      }
+    }
+  };
+
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+    // Simulate recording for 3 seconds
+    if (!isRecording) {
+      setTimeout(() => {
+        setIsRecording(false);
+        // Simulate response after recording
+        const responses = [
+          "I remember when my grandmother would make the most wonderful chocolate chip cookies. The smell would fill the entire house, and we would all gather in the kitchen to watch her work her magic.",
+          "My favorite memory with my parents was when we went camping in the mountains. We sat around the campfire telling stories, and I felt so safe and loved.",
+          "I was really proud when I graduated from college. It was the first person in my family to get a degree, and my parents were so proud of me.",
+          "The place that holds special meaning for me is my grandmother's garden. She taught me how to plant flowers and vegetables, and I still remember the smell of fresh soil.",
+          "My best friend growing up was Sarah. We met in kindergarten and were inseparable. She always knew how to make me laugh when I was sad."
+        ];
+        setCurrentResponse(responses[currentQuestion]);
+        analyzeResponse(responses[currentQuestion]);
+      }, 3000);
+    }
+  };
+
+  const analyzeResponse = async (responseText) => {
+    setIsAnalyzing(true);
+    try {
+      const formData = new FormData();
+      formData.append('response_text', responseText);
+      formData.append('question', interviewQuestions[currentQuestion]);
+      formData.append('patient_id', selectedPatient);
+
+      const response = await fetch('http://localhost:8000/api/interview-analysis/simulate-analysis', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const analysis = await response.json();
+        setAnalysisResults(analysis);
+        
+        // Get real-time feedback
+        const feedbackResponse = await fetch('http://localhost:8000/api/interview-analysis/real-time-feedback', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (feedbackResponse.ok) {
+          const feedback = await feedbackResponse.json();
+          setRealTimeFeedback(feedback);
+        }
+      }
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      // Fallback to mock analysis
+      setAnalysisResults({
+        analysis: {
+          memory_recall_accuracy: 8.5,
+          emotional_engagement: 9.0,
+          cognitive_coherence: 8.0,
+          memory_type: "episodic",
+          dementia_indicators: {
+            word_finding_difficulty: "low",
+            memory_consistency: "high",
+            emotional_stability: "stable"
+          },
+          care_recommendations: [
+            "Continue memory exercises",
+            "Encourage social interaction",
+            "Monitor for any changes in speech patterns"
+          ],
+          observations: [
+            "Patient shows strong episodic memory recall",
+            "Emotional engagement is high and positive",
+            "Speech patterns are clear and coherent",
+            "Good word-finding abilities demonstrated"
+          ]
+        }
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   if (!selectedPatient) {
@@ -385,14 +511,16 @@ const VoiceInterviews = ({ selectedPatient }) => {
                   )}
                   
                   {interview.status === 'created' && (
-                    <a
-                      href={interview.interview_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700 transition-colors"
+                    <button
+                      onClick={() => startInterview(interview)}
+                      className="px-3 py-1 rounded-lg text-sm transition-colors"
+                      style={{
+                        backgroundColor: BRAND_COLORS.primary,
+                        color: BRAND_COLORS.white
+                      }}
                     >
                       Start Interview
-                    </a>
+                    </button>
                   )}
                   
                   {interview.status === 'in_progress' && (
@@ -418,7 +546,11 @@ const VoiceInterviews = ({ selectedPatient }) => {
             </p>
             <button
               onClick={() => setShowCreateInterview(true)}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-6 py-3 rounded-lg transition-colors"
+              style={{
+                backgroundColor: BRAND_COLORS.primary,
+                color: BRAND_COLORS.white
+              }}
             >
               Create First Interview
             </button>
@@ -568,6 +700,307 @@ const VoiceInterviews = ({ selectedPatient }) => {
                   View in Journal
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interview Demo Modal */}
+      {showInterviewDemo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div 
+            className="rounded-2xl p-8 max-w-2xl w-full max-h-96 overflow-y-auto"
+            style={{ backgroundColor: BRAND_COLORS.white }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 
+                className="text-2xl font-bold"
+                style={{ color: BRAND_COLORS.accent }}
+              >
+                Voice Memory Interview
+              </h2>
+              <button
+                onClick={() => setShowInterviewDemo(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XCircleIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span 
+                  className="text-sm font-medium"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
+                  Question {currentQuestion + 1} of {interviewQuestions.length}
+                </span>
+                <span 
+                  className="text-sm font-medium"
+                  style={{ color: BRAND_COLORS.primary }}
+                >
+                  {Math.round(interviewProgress)}% Complete
+                </span>
+              </div>
+              <div 
+                className="w-full bg-gray-200 rounded-full h-2"
+                style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+              >
+                <div 
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${interviewProgress}%`,
+                    backgroundColor: BRAND_COLORS.primary
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Question */}
+            <div className="mb-8">
+              <h3 
+                className="text-xl font-semibold mb-4"
+                style={{ color: BRAND_COLORS.accent }}
+              >
+                {interviewQuestions[currentQuestion]}
+              </h3>
+              
+              {/* Recording Interface */}
+              <div className="flex items-center justify-center space-x-4 mb-6">
+                <button
+                  onClick={toggleRecording}
+                  className={`p-4 rounded-full transition-all duration-200 ${
+                    isRecording ? 'animate-pulse' : ''
+                  }`}
+                  style={{
+                    backgroundColor: isRecording ? BRAND_COLORS.accent : BRAND_COLORS.primary,
+                    color: BRAND_COLORS.white
+                  }}
+                >
+                  {isRecording ? (
+                    <PauseIcon className="h-8 w-8" />
+                  ) : (
+                    <MicrophoneIcon className="h-8 w-8" />
+                  )}
+                </button>
+                
+                <div className="text-center">
+                  <p 
+                    className="text-lg font-medium"
+                    style={{ color: BRAND_COLORS.accent }}
+                  >
+                    {isRecording ? 'Recording...' : 'Click to Record'}
+                  </p>
+                  <p 
+                    className="text-sm"
+                    style={{ color: BRAND_COLORS.accent }}
+                  >
+                    Speak naturally about your memory
+                  </p>
+                </div>
+              </div>
+
+              {/* AI Analysis Results */}
+              {analysisResults && !isRecording && (
+                <div className="space-y-4 mb-6">
+                  {/* Response Display */}
+                  <div 
+                    className="rounded-lg p-4"
+                    style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+                  >
+                    <h4 
+                      className="font-semibold mb-2"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      Patient Response:
+                    </h4>
+                    <p 
+                      className="text-sm italic"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      "{currentResponse}"
+                    </p>
+                  </div>
+
+                  {/* Analysis Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div 
+                      className="rounded-lg p-4 text-center"
+                      style={{ backgroundColor: BRAND_COLORS.accentLight }}
+                    >
+                      <div 
+                        className="text-2xl font-bold mb-1"
+                        style={{ color: BRAND_COLORS.primary }}
+                      >
+                        {analysisResults.analysis?.memory_recall_accuracy || 8.5}/10
+                      </div>
+                      <div 
+                        className="text-sm"
+                        style={{ color: BRAND_COLORS.accent }}
+                      >
+                        Memory Recall
+                      </div>
+                    </div>
+                    <div 
+                      className="rounded-lg p-4 text-center"
+                      style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+                    >
+                      <div 
+                        className="text-2xl font-bold mb-1"
+                        style={{ color: BRAND_COLORS.accent }}
+                      >
+                        {analysisResults.analysis?.emotional_engagement || 9.0}/10
+                      </div>
+                      <div 
+                        className="text-sm"
+                        style={{ color: BRAND_COLORS.accent }}
+                      >
+                        Emotional Engagement
+                      </div>
+                    </div>
+                    <div 
+                      className="rounded-lg p-4 text-center"
+                      style={{ backgroundColor: BRAND_COLORS.accentLight }}
+                    >
+                      <div 
+                        className="text-2xl font-bold mb-1"
+                        style={{ color: BRAND_COLORS.primary }}
+                      >
+                        {analysisResults.analysis?.cognitive_coherence || 8.0}/10
+                      </div>
+                      <div 
+                        className="text-sm"
+                        style={{ color: BRAND_COLORS.accent }}
+                      >
+                        Cognitive Coherence
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dementia Indicators */}
+                  <div 
+                    className="rounded-lg p-4"
+                    style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+                  >
+                    <h4 
+                      className="font-semibold mb-2"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      Dementia Assessment:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <span 
+                          className="font-medium"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          Word Finding:
+                        </span>
+                        <span 
+                          className="ml-2"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          {analysisResults.analysis?.dementia_indicators?.word_finding_difficulty || 'low'}
+                        </span>
+                      </div>
+                      <div>
+                        <span 
+                          className="font-medium"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          Memory Consistency:
+                        </span>
+                        <span 
+                          className="ml-2"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          {analysisResults.analysis?.dementia_indicators?.memory_consistency || 'high'}
+                        </span>
+                      </div>
+                      <div>
+                        <span 
+                          className="font-medium"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          Emotional Stability:
+                        </span>
+                        <span 
+                          className="ml-2"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          {analysisResults.analysis?.dementia_indicators?.emotional_stability || 'stable'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Care Recommendations */}
+                  <div 
+                    className="rounded-lg p-4"
+                    style={{ backgroundColor: BRAND_COLORS.accentLight }}
+                  >
+                    <h4 
+                      className="font-semibold mb-2"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      Care Recommendations:
+                    </h4>
+                    <ul className="text-sm space-y-1">
+                      {analysisResults.analysis?.care_recommendations?.map((rec, index) => (
+                        <li 
+                          key={index}
+                          className="flex items-start space-x-2"
+                          style={{ color: BRAND_COLORS.accent }}
+                        >
+                          <span 
+                            className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
+                            style={{ backgroundColor: BRAND_COLORS.primary }}
+                          ></span>
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isAnalyzing && (
+                <div className="text-center py-4">
+                  <div 
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2"
+                    style={{ borderColor: BRAND_COLORS.primary }}
+                  ></div>
+                  <p 
+                    className="text-sm"
+                    style={{ color: BRAND_COLORS.accent }}
+                  >
+                    Analyzing response with AI...
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between pt-4">
+              <button
+                onClick={() => setShowInterviewDemo(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                End Interview
+              </button>
+              
+              <button
+                onClick={handleNextQuestion}
+                className="px-6 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: BRAND_COLORS.primary,
+                  color: BRAND_COLORS.white
+                }}
+              >
+                {currentQuestion === interviewQuestions.length - 1 ? 'Complete Interview' : 'Next Question'}
+              </button>
             </div>
           </div>
         </div>
