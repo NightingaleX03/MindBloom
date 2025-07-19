@@ -12,6 +12,73 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
+// Brand Colors
+const BRAND_COLORS = {
+  primary: '#eb9bb4',    // Soft pink
+  accent: '#3b2347',     // Deep purple
+  primaryLight: '#f5c4d1', // Lighter pink
+  accentLight: '#5a3a6b',  // Lighter purple
+  white: '#ffffff',
+  gray: '#f8f9fa'
+};
+
+// MINDBLOOM Logo Component
+const MindbloomLogo = ({ size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-20 h-20'
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {/* Blooming flower icon with brand colors */}
+      <div className="w-full h-full relative">
+        {/* Petal 1 - Top */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 2 - Right */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Petal 3 - Bottom */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 4 - Left */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Center */}
+        <div 
+          className="absolute w-1/4 h-1/4 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          style={{ 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const CaregiverDashboard = () => {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);

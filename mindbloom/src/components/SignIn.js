@@ -1,6 +1,73 @@
 import React, { useState } from 'react';
 import { CpuChipIcon, SparklesIcon, HeartIcon, UserIcon, LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
+// Brand Colors
+const BRAND_COLORS = {
+  primary: '#eb9bb4',    // Soft pink
+  accent: '#3b2347',     // Deep purple
+  primaryLight: '#f5c4d1', // Lighter pink
+  accentLight: '#5a3a6b',  // Lighter purple
+  white: '#ffffff',
+  gray: '#f8f9fa'
+};
+
+// MINDBLOOM Logo Component
+const MindbloomLogo = ({ size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-20 h-20'
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {/* Blooming flower icon with brand colors */}
+      <div className="w-full h-full relative">
+        {/* Petal 1 - Top */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 2 - Right */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Petal 3 - Bottom */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 4 - Left */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Center */}
+        <div 
+          className="absolute w-1/4 h-1/4 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          style={{ 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const SignIn = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
@@ -102,33 +169,57 @@ const SignIn = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <div 
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ 
+        background: `linear-gradient(135deg, ${BRAND_COLORS.primaryLight} 0%, ${BRAND_COLORS.accentLight} 100%)`
+      }}
+    >
       <div className="max-w-md w-full">
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-purple-100 rounded-full">
-              <CpuChipIcon className="h-12 w-12 text-purple-600" />
+            <div 
+              className="p-4 rounded-full"
+              style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+            >
+              <MindbloomLogo size="lg" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome to MindBloom
+          <h1 
+            className="text-4xl font-bold mb-2"
+            style={{ color: BRAND_COLORS.accent }}
+          >
+            Welcome to MINDBLOOM
           </h1>
-          <p className="text-lg text-gray-600">
+          <p 
+            className="text-lg"
+            style={{ color: BRAND_COLORS.accent }}
+          >
             Caregiver Portal - Manage Your Loved Ones
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+        <div 
+          className="rounded-2xl shadow-xl p-8 mb-8"
+          style={{ backgroundColor: BRAND_COLORS.white }}
+        >
+          <div 
+            className="flex space-x-1 mb-6 p-1 rounded-lg"
+            style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+          >
             <button
               onClick={() => setActiveTab('login')}
               className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'login'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'shadow-sm'
+                  : ''
               }`}
+              style={{
+                backgroundColor: activeTab === 'login' ? BRAND_COLORS.white : 'transparent',
+                color: activeTab === 'login' ? BRAND_COLORS.primary : BRAND_COLORS.accent
+              }}
             >
               Sign In
             </button>
@@ -136,9 +227,13 @@ const SignIn = ({ onLogin }) => {
               onClick={() => setActiveTab('signup')}
               className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-all ${
                 activeTab === 'signup'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'shadow-sm'
+                  : ''
               }`}
+              style={{
+                backgroundColor: activeTab === 'signup' ? BRAND_COLORS.white : 'transparent',
+                color: activeTab === 'signup' ? BRAND_COLORS.primary : BRAND_COLORS.accent
+              }}
             >
               Sign Up
             </button>
@@ -146,8 +241,14 @@ const SignIn = ({ onLogin }) => {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div 
+              className="mb-4 p-3 border rounded-lg"
+              style={{ 
+                backgroundColor: BRAND_COLORS.primaryLight,
+                borderColor: BRAND_COLORS.primary
+              }}
+            >
+              <p style={{ color: BRAND_COLORS.accent }} className="text-sm">{error}</p>
             </div>
           )}
 
@@ -155,18 +256,29 @@ const SignIn = ({ onLogin }) => {
           {activeTab === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="login-email" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Email Address
                 </label>
                 <div className="relative">
-                  <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <EnvelopeIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="email"
                     id="login-email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
                     placeholder="Enter your email"
                     required
                     disabled={loading}
@@ -175,18 +287,29 @@ const SignIn = ({ onLogin }) => {
               </div>
 
               <div>
-                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="login-password" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Password
                 </label>
                 <div className="relative">
-                  <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <LockClosedIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="password"
                     id="login-password"
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
                     placeholder="Enter your password"
                     required
                     disabled={loading}
@@ -197,7 +320,11 @@ const SignIn = ({ onLogin }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-6 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: BRAND_COLORS.primary,
+                  color: BRAND_COLORS.white
+                }}
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
@@ -205,7 +332,8 @@ const SignIn = ({ onLogin }) => {
               <div className="text-center">
                 <button
                   type="button"
-                  className="text-purple-600 hover:text-purple-700 text-sm"
+                  className="text-sm"
+                  style={{ color: BRAND_COLORS.primary }}
                   onClick={() => setActiveTab('signup')}
                   disabled={loading}
                 >
@@ -219,18 +347,29 @@ const SignIn = ({ onLogin }) => {
           {activeTab === 'signup' && (
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
-                <label htmlFor="signup-name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="signup-name" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Full Name
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <UserIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="text"
                     id="signup-name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
                     placeholder="Enter your full name"
                     required
                     disabled={loading}
@@ -239,18 +378,29 @@ const SignIn = ({ onLogin }) => {
               </div>
 
               <div>
-                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="signup-email" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Email Address
                 </label>
                 <div className="relative">
-                  <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <EnvelopeIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="email"
                     id="signup-email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
                     placeholder="Enter your email"
                     required
                     disabled={loading}
@@ -259,19 +409,30 @@ const SignIn = ({ onLogin }) => {
               </div>
 
               <div>
-                <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="signup-password" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Password
                 </label>
                 <div className="relative">
-                  <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <LockClosedIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="password"
                     id="signup-password"
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Create a password"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
+                    placeholder="Enter your password"
                     required
                     disabled={loading}
                   />
@@ -279,18 +440,29 @@ const SignIn = ({ onLogin }) => {
               </div>
 
               <div>
-                <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label 
+                  htmlFor="signup-confirm-password" 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <LockClosedIcon 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" 
+                    style={{ color: BRAND_COLORS.primary }}
+                  />
                   <input
                     type="password"
                     id="signup-confirm-password"
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent"
+                    style={{
+                      borderColor: BRAND_COLORS.primary,
+                      outline: 'none'
+                    }}
                     placeholder="Confirm your password"
                     required
                     disabled={loading}
@@ -301,7 +473,11 @@ const SignIn = ({ onLogin }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-6 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: BRAND_COLORS.primary,
+                  color: BRAND_COLORS.white
+                }}
               >
                 {loading ? 'Creating Account...' : 'Create Account'}
               </button>
@@ -309,7 +485,8 @@ const SignIn = ({ onLogin }) => {
               <div className="text-center">
                 <button
                   type="button"
-                  className="text-purple-600 hover:text-purple-700 text-sm"
+                  className="text-sm"
+                  style={{ color: BRAND_COLORS.primary }}
                   onClick={() => setActiveTab('login')}
                   disabled={loading}
                 >
@@ -318,73 +495,28 @@ const SignIn = ({ onLogin }) => {
               </div>
             </form>
           )}
-
-          {/* Testing Account Button */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleTestingAccount}
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-green-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Loading...' : 'Testing Account - Caregiver Login'}
-            </button>
-            <p className="text-center text-sm text-gray-500 mt-2">
-              Quick access as a caregiver with demo credentials
-            </p>
-          </div>
         </div>
 
-        {/* Features */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <SparklesIcon className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  Multi-Patient Management
-                </h3>
-                <p className="text-gray-600 text-base">
-                  Manage multiple patients and their memories from one dashboard
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <HeartIcon className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  Memory Support
-                </h3>
-                <p className="text-gray-600 text-base">
-                  Help your loved ones preserve and cherish precious memories
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <CpuChipIcon className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  AI-Powered Insights
-                </h3>
-                <p className="text-gray-600 text-base">
-                  Get insights and support for better care management
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-gray-500 text-sm">
-          <p>MindBloom - Empowering caregivers, preserving memories</p>
-          <p className="mt-2">© 2024 MindBloom. All rights reserved.</p>
+        {/* Demo Account Button */}
+        <div className="text-center">
+          <button
+            onClick={handleTestingAccount}
+            disabled={loading}
+            className="inline-flex items-center space-x-2 px-6 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: BRAND_COLORS.accent,
+              color: BRAND_COLORS.white
+            }}
+          >
+            <SparklesIcon className="h-5 w-5" />
+            <span>Try Demo Account</span>
+          </button>
+          <p 
+            className="mt-2 text-sm"
+            style={{ color: BRAND_COLORS.accent }}
+          >
+            Experience MINDBLOOM with sample data
+          </p>
         </div>
       </div>
     </div>

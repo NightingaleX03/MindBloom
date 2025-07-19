@@ -23,6 +23,73 @@ import Profile from './components/Profile';
 import VoiceInterviews from './components/VoiceInterviews';
 import Settings from './components/Settings';
 
+// Brand Colors
+const BRAND_COLORS = {
+  primary: '#eb9bb4',    // Soft pink
+  accent: '#3b2347',     // Deep purple
+  primaryLight: '#f5c4d1', // Lighter pink
+  accentLight: '#5a3a6b',  // Lighter purple
+  white: '#ffffff',
+  gray: '#f8f9fa'
+};
+
+// MINDBLOOM Logo Component
+const MindbloomLogo = ({ size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-20 h-20'
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {/* Blooming flower icon with brand colors */}
+      <div className="w-full h-full relative">
+        {/* Petal 1 - Top */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 2 - Right */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Petal 3 - Bottom */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 4 - Left */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Center */}
+        <div 
+          className="absolute w-1/4 h-1/4 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          style={{ 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Sidebar Component
 const Sidebar = ({ activeTab, onTabChange, selectedPatient, onPatientChange, patients }) => {
   const tabs = [
@@ -38,19 +105,37 @@ const Sidebar = ({ activeTab, onTabChange, selectedPatient, onPatientChange, pat
   ];
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50">
+    <div 
+      className="fixed left-0 top-0 h-full w-64 shadow-lg z-50"
+      style={{ backgroundColor: BRAND_COLORS.white }}
+    >
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">MindBloom</h1>
+        <div className="flex items-center space-x-3 mb-8">
+          <MindbloomLogo size="md" />
+          <h1 
+            className="text-2xl font-bold"
+            style={{ color: BRAND_COLORS.accent }}
+          >
+            MINDBLOOM
+          </h1>
+        </div>
         
         {/* Patient Selector */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label 
+            className="block text-sm font-medium mb-2"
+            style={{ color: BRAND_COLORS.accent }}
+          >
             Select Patient
           </label>
           <select
             value={selectedPatient}
             onChange={(e) => onPatientChange(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:border-transparent"
+            style={{
+              borderColor: BRAND_COLORS.primary,
+              outline: 'none'
+            }}
           >
             <option value="">Choose a patient...</option>
             {patients.map((patient) => (
@@ -69,9 +154,13 @@ const Sidebar = ({ activeTab, onTabChange, selectedPatient, onPatientChange, pat
               onClick={() => onTabChange(tab.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'text-white'
+                  : 'hover:bg-gray-50'
               }`}
+              style={{
+                backgroundColor: activeTab === tab.id ? BRAND_COLORS.primary : 'transparent',
+                color: activeTab === tab.id ? BRAND_COLORS.white : BRAND_COLORS.accent
+              }}
             >
               <tab.icon className="h-5 w-5" />
               <span className="font-medium">{tab.name}</span>
@@ -134,7 +223,10 @@ function App() {
   // Main app layout
   return (
     <Router>
-      <div className="flex h-screen bg-gray-50">
+      <div 
+        className="flex h-screen"
+        style={{ backgroundColor: BRAND_COLORS.gray }}
+      >
         {/* Sidebar */}
         <Sidebar 
           activeTab={activeTab}
@@ -150,7 +242,10 @@ function App() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 
+                  className="text-3xl font-bold"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   {activeTab === 'dashboard' && 'Dashboard'}
                   {activeTab === 'caregiver' && 'Caregiver Dashboard'}
                   {activeTab === 'journal' && 'Memory Journal'}
@@ -161,7 +256,10 @@ function App() {
                   {activeTab === 'profile' && 'Profile'}
                   {activeTab === 'settings' && 'Settings'}
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p 
+                  className="mt-1"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   {selectedPatient ? 
                     `Managing: ${patients.find(p => p.id === selectedPatient)?.name}` : 
                     'Select a patient to get started'
@@ -171,7 +269,8 @@ function App() {
               
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 transition-colors"
+                style={{ color: BRAND_COLORS.accent }}
               >
                 Logout
               </button>
@@ -179,14 +278,26 @@ function App() {
 
             {/* Patient Selection Warning */}
             {!selectedPatient && activeTab !== 'caregiver' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
+              <div 
+                className="border rounded-xl p-6 mb-8"
+                style={{ 
+                  backgroundColor: BRAND_COLORS.primaryLight,
+                  borderColor: BRAND_COLORS.primary
+                }}
+              >
                 <div className="flex items-center space-x-3">
-                  <UserGroupIcon className="h-6 w-6 text-yellow-600" />
+                  <UserGroupIcon 
+                    className="h-6 w-6" 
+                    style={{ color: BRAND_COLORS.accent }}
+                  />
                   <div>
-                    <h3 className="text-lg font-semibold text-yellow-900">
+                    <h3 
+                      className="text-lg font-semibold"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
                       Select a Patient
                     </h3>
-                    <p className="text-yellow-700">
+                    <p style={{ color: BRAND_COLORS.accent }}>
                       Please select a patient from the sidebar to view and manage their data.
                     </p>
                   </div>
@@ -207,12 +318,21 @@ function App() {
 
             {/* No patient selected message */}
             {!selectedPatient && activeTab !== 'caregiver' && activeTab !== 'dashboard' && activeTab !== 'interviews' && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-                <UserGroupIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <div 
+                className="rounded-2xl shadow-lg p-8 text-center"
+                style={{ backgroundColor: BRAND_COLORS.white }}
+              >
+                <UserGroupIcon 
+                  className="h-16 w-16 mx-auto mb-4" 
+                  style={{ color: BRAND_COLORS.primary }}
+                />
+                <h2 
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: BRAND_COLORS.accent }}
+                >
                   Select a Patient
                 </h2>
-                <p className="text-gray-600">
+                <p style={{ color: BRAND_COLORS.accent }}>
                   Choose a patient from the sidebar to access their {activeTab} data.
                 </p>
               </div>

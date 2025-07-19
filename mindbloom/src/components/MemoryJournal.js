@@ -13,6 +13,73 @@ import {
 } from '@heroicons/react/24/outline';
 import MemoryVisualization from './MemoryVisualization';
 
+// Brand Colors
+const BRAND_COLORS = {
+  primary: '#eb9bb4',    // Soft pink
+  accent: '#3b2347',     // Deep purple
+  primaryLight: '#f5c4d1', // Lighter pink
+  accentLight: '#5a3a6b',  // Lighter purple
+  white: '#ffffff',
+  gray: '#f8f9fa'
+};
+
+// MINDBLOOM Logo Component
+const MindbloomLogo = ({ size = 'md' }) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-20 h-20'
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      {/* Blooming flower icon with brand colors */}
+      <div className="w-full h-full relative">
+        {/* Petal 1 - Top */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 2 - Right */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 -translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Petal 3 - Bottom */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 -translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.accent} 100%)`,
+            boxShadow: '0 2px 8px rgba(235, 155, 180, 0.3)'
+          }}
+        />
+        {/* Petal 4 - Left */}
+        <div 
+          className="absolute w-1/2 h-1/2 rounded-full transform rotate-45 translate-x-1/4 translate-y-1/4"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.accent} 0%, ${BRAND_COLORS.primary} 100%)`,
+            boxShadow: '0 2px 8px rgba(59, 35, 71, 0.3)'
+          }}
+        />
+        {/* Center */}
+        <div 
+          className="absolute w-1/4 h-1/4 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          style={{ 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const MemoryJournal = ({ selectedPatient }) => {
   const [memories, setMemories] = useState([]);
   const [showNewMemory, setShowNewMemory] = useState(false);
@@ -170,12 +237,21 @@ const MemoryJournal = ({ selectedPatient }) => {
   if (!selectedPatient) {
     return (
       <div className="space-y-8">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <UserIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div 
+          className="rounded-2xl shadow-lg p-8 text-center"
+          style={{ backgroundColor: BRAND_COLORS.white }}
+        >
+          <UserIcon 
+            className="h-16 w-16 mx-auto mb-4" 
+            style={{ color: BRAND_COLORS.primary }}
+          />
+          <h2 
+            className="text-2xl font-bold mb-2"
+            style={{ color: BRAND_COLORS.accent }}
+          >
             Select a Patient
           </h2>
-          <p className="text-gray-600">
+          <p style={{ color: BRAND_COLORS.accent }}>
             Please select a patient from the sidebar to view and manage their memory journal.
           </p>
         </div>
@@ -186,17 +262,29 @@ const MemoryJournal = ({ selectedPatient }) => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
+      <div 
+        className="rounded-2xl shadow-lg p-8"
+        style={{ backgroundColor: BRAND_COLORS.white }}
+      >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <BookOpenIcon className="h-8 w-8 text-purple-600" />
+            <div 
+              className="p-3 rounded-full"
+              style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+            >
+              <MindbloomLogo size="md" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 
+                className="text-3xl font-bold"
+                style={{ color: BRAND_COLORS.accent }}
+              >
                 Memory Journal
               </h1>
-              <p className="text-lg text-gray-600">
+              <p 
+                className="text-lg"
+                style={{ color: BRAND_COLORS.accent }}
+              >
                 Record and cherish precious memories for {selectedPatient === '1' ? 'Sarah Johnson' : 
                 selectedPatient === '2' ? 'Robert Smith' : 'Margaret Davis'}
               </p>
@@ -204,7 +292,11 @@ const MemoryJournal = ({ selectedPatient }) => {
           </div>
           <button
             onClick={() => setShowNewMemory(true)}
-            className="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors flex items-center space-x-2 text-lg"
+            className="px-6 py-3 rounded-xl transition-colors flex items-center space-x-2 text-lg"
+            style={{
+              backgroundColor: BRAND_COLORS.primary,
+              color: BRAND_COLORS.white
+            }}
           >
             <PlusIcon className="h-6 w-6" />
             <span>Add Memory</span>

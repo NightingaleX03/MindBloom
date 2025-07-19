@@ -12,6 +12,16 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
+// Brand Colors
+const BRAND_COLORS = {
+  primary: '#eb9bb4',    // Soft pink
+  accent: '#3b2347',     // Deep purple
+  primaryLight: '#f5c4d1', // Lighter pink
+  accentLight: '#5a3a6b',  // Lighter purple
+  white: '#ffffff',
+  gray: '#f8f9fa'
+};
+
 const Calendar = ({ selectedPatient }) => {
   const [events, setEvents] = useState([]);
   const [showNewEvent, setShowNewEvent] = useState(false);
@@ -835,7 +845,7 @@ const Calendar = ({ selectedPatient }) => {
 
       if (response.ok) {
         // Add to local state
-        setEvents([...events, event]);
+    setEvents([...events, event]);
         
         // Save to localStorage as backup
         const savedEvents = JSON.parse(localStorage.getItem(`calendar-events-${selectedPatient}`) || '[]');
@@ -843,16 +853,16 @@ const Calendar = ({ selectedPatient }) => {
         localStorage.setItem(`calendar-events-${selectedPatient}`, JSON.stringify(savedEvents));
         
         // Reset form
-        setNewEvent({
-          title: '',
-          description: '',
-          type: 'activity',
-          startTime: '',
-          endTime: '',
-          priority: 'medium',
-          reminders: []
-        });
-        setShowNewEvent(false);
+    setNewEvent({
+      title: '',
+      description: '',
+      type: 'activity',
+      startTime: '',
+      endTime: '',
+      priority: 'medium',
+      reminders: []
+    });
+    setShowNewEvent(false);
         
         // Show success message
         alert('Event saved successfully!');
@@ -930,6 +940,11 @@ const Calendar = ({ selectedPatient }) => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     const currentTime = now.getHours() * 60 + now.getMinutes();
+    const currentTimeString = now.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
     
     return events.filter(event => {
       // Only check events that are not completed
@@ -939,19 +954,34 @@ const Calendar = ({ selectedPatient }) => {
       const [eventHour, eventMinute] = event.startTime.split(':').map(Number);
       const eventTime = eventHour * 60 + eventMinute;
       
-      // Event is overdue if:
+      // Event is overdue ONLY if:
       // 1. It's from today AND the current time is past the event time
-      // 2. It's from a previous day (regardless of time)
-      // 3. Future days are NEVER overdue
+      // 2. Past days and future days are NEVER overdue
       if (event.date === today) {
-        return eventTime < currentTime;
-      } else if (event.date < today) {
-        return true; // Events from previous days are always overdue
+        // For today's events, check if current time is past the event time
+        const isOverdue = eventTime < currentTime;
+        if (isOverdue) {
+          console.log(`Overdue: ${event.title} (${event.startTime}) - Current time: ${currentTimeString}`);
+        }
+        return isOverdue;
       } else {
-        return false; // Events from future days are never overdue
+        // Events from past days and future days are never overdue
+        return false;
       }
     });
   };
+
+  // Add real-time updates for overdue events
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Update current time every minute to refresh overdue status
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const todayEvents = getTodayEvents();
   const overdueEvents = getOverdueEvents();
@@ -959,12 +989,21 @@ const Calendar = ({ selectedPatient }) => {
   if (!selectedPatient) {
     return (
       <div className="space-y-8">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <UserIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div 
+          className="rounded-2xl shadow-lg p-8 text-center"
+          style={{ backgroundColor: BRAND_COLORS.white }}
+        >
+          <UserIcon 
+            className="h-16 w-16 mx-auto mb-4" 
+            style={{ color: BRAND_COLORS.primary }}
+          />
+          <h2 
+            className="text-2xl font-bold mb-2"
+            style={{ color: BRAND_COLORS.accent }}
+          >
             Select a Patient
           </h2>
-          <p className="text-gray-600">
+          <p style={{ color: BRAND_COLORS.accent }}>
             Please select a patient from the sidebar to view and manage their calendar.
           </p>
         </div>
@@ -975,45 +1014,76 @@ const Calendar = ({ selectedPatient }) => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
+      <div 
+        className="rounded-2xl shadow-lg p-8"
+        style={{ backgroundColor: BRAND_COLORS.white }}
+      >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <CalendarIcon className="h-8 w-8 text-purple-600" />
+            <div 
+              className="p-3 rounded-full"
+              style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+            >
+              <CalendarIcon 
+                className="h-8 w-8" 
+                style={{ color: BRAND_COLORS.accent }}
+              />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 
+                className="text-3xl font-bold"
+                style={{ color: BRAND_COLORS.accent }}
+              >
                 Daily Calendar
               </h1>
-              <p className="text-lg text-gray-600">
+              <p 
+                className="text-lg"
+                style={{ color: BRAND_COLORS.accent }}
+              >
                 Manage {selectedPatient === '1' ? 'Sarah' : 
                 selectedPatient === '2' ? 'Robert' : 'Margaret'}'s daily routines and activities
               </p>
             </div>
           </div>
           <div className="flex space-x-3">
-            <button
+          <button
               onClick={resetToDefaultEvents}
-              className="bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-700 transition-colors flex items-center space-x-2 text-sm"
+              className="px-4 py-3 rounded-xl transition-colors flex items-center space-x-2 text-sm"
+              style={{
+                backgroundColor: BRAND_COLORS.accent,
+                color: BRAND_COLORS.white
+              }}
             >
               <ArrowPathIcon className="h-5 w-5" />
               <span>Reset Events</span>
             </button>
             <button
               onClick={handleAddEventClick}
-              className="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors flex items-center space-x-2 text-lg"
-            >
-              <PlusIcon className="h-6 w-6" />
-              <span>Add Event</span>
-            </button>
+            className="px-6 py-3 rounded-xl transition-colors flex items-center space-x-2 text-lg"
+            style={{
+              backgroundColor: BRAND_COLORS.primary,
+              color: BRAND_COLORS.white
+            }}
+          >
+            <PlusIcon className="h-6 w-6" />
+            <span>Add Event</span>
+          </button>
           </div>
         </div>
 
         {/* Date Selector */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
+        <div 
+          className="rounded-xl p-6"
+          style={{ 
+            background: `linear-gradient(135deg, ${BRAND_COLORS.primaryLight} 0%, ${BRAND_COLORS.accentLight} 100%)`
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 
+                className="text-xl font-semibold mb-2"
+                style={{ color: BRAND_COLORS.accent }}
+              >
                 {selectedDate.toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
@@ -1021,26 +1091,38 @@ const Calendar = ({ selectedPatient }) => {
                   day: 'numeric'
                 })}
               </h3>
-              <p className="text-gray-600">
+              <p style={{ color: BRAND_COLORS.accent }}>
                 {todayEvents.length} events scheduled for today
               </p>
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
-                className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                className="px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: BRAND_COLORS.white,
+                  color: BRAND_COLORS.primary
+                }}
               >
                 Previous Day
               </button>
               <button
                 onClick={() => setSelectedDate(new Date())}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: BRAND_COLORS.primary,
+                  color: BRAND_COLORS.white
+                }}
               >
                 Today
               </button>
               <button
                 onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
-                className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+                className="px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: BRAND_COLORS.white,
+                  color: BRAND_COLORS.primary
+                }}
               >
                 Next Day
               </button>
@@ -1052,11 +1134,20 @@ const Calendar = ({ selectedPatient }) => {
       {/* Overdue Events */}
       {overdueEvents.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-8">
-          <div className="flex items-center space-x-3 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
             <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
             <h2 className="text-xl font-bold text-red-900">
               Overdue Events
             </h2>
+            </div>
+            <div className="text-sm text-red-700 bg-red-100 px-3 py-1 rounded-full">
+              Current Time: {currentTime.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </div>
           </div>
           <div className="space-y-4">
             {overdueEvents.map((event) => (
