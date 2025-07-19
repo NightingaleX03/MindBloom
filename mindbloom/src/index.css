@@ -2,6 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark mode styles */
+.dark {
+  @apply bg-gray-900 text-white;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .text-gray-900 {
+  @apply text-white;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-600;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-gray-700;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-800;
+}
+
+.dark .bg-purple-50 {
+  @apply bg-purple-900;
+}
+
+.dark .bg-blue-50 {
+  @apply bg-blue-900;
+}
+
+.dark .bg-green-50 {
+  @apply bg-green-900;
+}
+
+.dark .bg-orange-50 {
+  @apply bg-orange-900;
+}
+
+.dark .bg-yellow-50 {
+  @apply bg-yellow-900;
+}
+
+.dark .bg-red-50 {
+  @apply bg-red-900;
+}
+
+/* High contrast mode */
+.high-contrast {
+  @apply bg-black text-white;
+}
+
+.high-contrast .bg-white {
+  @apply bg-black;
+}
+
+.high-contrast .text-gray-900 {
+  @apply text-white;
+}
+
+.high-contrast .text-gray-600 {
+  @apply text-yellow-300;
+}
+
+.high-contrast .border-gray-200 {
+  @apply border-yellow-400;
+}
+
+.high-contrast .border-gray-300 {
+  @apply border-yellow-400;
+}
+
+.high-contrast .bg-purple-600 {
+  @apply bg-yellow-500;
+}
+
+.high-contrast .hover\:bg-purple-700:hover {
+  @apply hover:bg-yellow-600;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

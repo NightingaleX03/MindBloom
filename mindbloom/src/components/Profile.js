@@ -1,30 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { 
   UserIcon, 
-  CogIcon,
   HeartIcon,
-  EyeIcon,
-  BellIcon,
   ShieldCheckIcon,
-  SparklesIcon
+  SparklesIcon,
+  CalendarIcon,
+  BookOpenIcon,
+  MicrophoneIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 
-const Profile = () => {
-  const { user } = useAuth0();
-  const [profile, setProfile] = useState({
+const Profile = ({ selectedPatient }) => {
+  const [patientProfile, setPatientProfile] = useState({
+    id: '',
     name: '',
-    email: '',
-    preferences: {
-      theme: 'light',
-      fontSize: 'large',
-      notifications: true,
-      accessibility: {
-        highContrast: false,
-        screenReader: false,
-        voiceInput: true
-      }
-    },
+    age: '',
+    diagnosis: '',
+    caregiver: '',
     emergencyContact: {
       name: '',
       phone: '',
@@ -34,35 +26,114 @@ const Profile = () => {
       conditions: [],
       medications: [],
       allergies: []
+    },
+    stats: {
+      totalMemories: 0,
+      totalInterviews: 0,
+      totalJournalEntries: 0,
+      lastActive: ''
     }
   });
 
-  useEffect(() => {
-    if (user) {
-      setProfile(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || ''
-      }));
+  // Mock patient data
+  const patientData = {
+    "1": {
+      id: "1",
+      name: "Sarah Johnson",
+      age: "78",
+      diagnosis: "Early-stage Alzheimer's",
+      caregiver: "Michael Johnson (Son)",
+      emergencyContact: {
+        name: "Michael Johnson",
+        phone: "(555) 123-4567",
+        relationship: "Son"
+      },
+      medicalInfo: {
+        conditions: ["Alzheimer's Disease", "Hypertension", "Diabetes"],
+        medications: ["Donepezil", "Metformin", "Lisinopril"],
+        allergies: ["Penicillin", "Latex"]
+      },
+      stats: {
+        totalMemories: 24,
+        totalInterviews: 3,
+        totalJournalEntries: 18,
+        lastActive: "2024-01-15T10:30:00Z"
+      }
+    },
+    "2": {
+      id: "2", 
+      name: "Robert Smith",
+      age: "82",
+      diagnosis: "Vascular Dementia",
+      caregiver: "Jennifer Smith (Daughter)",
+      emergencyContact: {
+        name: "Jennifer Smith",
+        phone: "(555) 234-5678",
+        relationship: "Daughter"
+      },
+      medicalInfo: {
+        conditions: ["Vascular Dementia", "Heart Disease", "Arthritis"],
+        medications: ["Aspirin", "Warfarin", "Ibuprofen"],
+        allergies: ["Sulfa Drugs"]
+      },
+      stats: {
+        totalMemories: 31,
+        totalInterviews: 5,
+        totalJournalEntries: 25,
+        lastActive: "2024-01-14T14:20:00Z"
+      }
+    },
+    "3": {
+      id: "3",
+      name: "Margaret Davis", 
+      age: "75",
+      diagnosis: "Lewy Body Dementia",
+      caregiver: "David Davis (Husband)",
+      emergencyContact: {
+        name: "David Davis",
+        phone: "(555) 345-6789",
+        relationship: "Husband"
+      },
+      medicalInfo: {
+        conditions: ["Lewy Body Dementia", "Parkinson's Symptoms", "Depression"],
+        medications: ["Rivastigmine", "Levodopa", "Sertraline"],
+        allergies: ["Codeine"]
+      },
+      stats: {
+        totalMemories: 19,
+        totalInterviews: 2,
+        totalJournalEntries: 12,
+        lastActive: "2024-01-13T09:15:00Z"
+      }
     }
-  }, [user]);
+  };
 
-  const themes = [
-    { value: 'light', label: 'Light', description: 'Standard light theme' },
-    { value: 'dark', label: 'Dark', description: 'Dark theme for low light' },
-    { value: 'high-contrast', label: 'High Contrast', description: 'Maximum contrast for visibility' }
-  ];
-
-  const fontSizes = [
-    { value: 'small', label: 'Small', description: 'Standard text size' },
-    { value: 'medium', label: 'Medium', description: 'Larger text for easier reading' },
-    { value: 'large', label: 'Large', description: 'Extra large text for maximum readability' }
-  ];
+  useEffect(() => {
+    if (selectedPatient && patientData[selectedPatient]) {
+      setPatientProfile(patientData[selectedPatient]);
+    }
+  }, [selectedPatient]);
 
   const handleSave = () => {
     // Here you would save to backend
-    alert('Profile saved successfully!');
+    alert('Patient profile saved successfully!');
   };
+
+  if (!selectedPatient) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <UserIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Select a Patient
+          </h2>
+          <p className="text-gray-600">
+            Please select a patient from the sidebar to view their profile information.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -74,23 +145,75 @@ const Profile = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Your Profile
+              {patientProfile.name}'s Profile
             </h1>
             <p className="text-lg text-gray-600">
-              Manage your account settings and preferences
+              Patient information and medical details
             </p>
           </div>
         </div>
 
-        {/* Profile Picture and Basic Info */}
+        {/* Patient Picture and Basic Info */}
         <div className="flex items-center space-x-6 mb-8">
           <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center">
             <UserIcon className="h-12 w-12 text-purple-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
-            <p className="text-gray-600">{profile.email}</p>
-            <p className="text-sm text-gray-500">Member since {new Date().getFullYear()}</p>
+            <h2 className="text-2xl font-bold text-gray-900">{patientProfile.name}</h2>
+            <p className="text-gray-600">Age: {patientProfile.age} years old</p>
+            <p className="text-gray-600">Diagnosis: {patientProfile.diagnosis}</p>
+            <p className="text-sm text-gray-500">Caregiver: {patientProfile.caregiver}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Activity Statistics */}
+      <div className="bg-white rounded-2xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          Activity Overview
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <BookOpenIcon className="h-8 w-8 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Memories</p>
+                <p className="text-2xl font-bold text-gray-900">{patientProfile.stats.totalMemories}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <MicrophoneIcon className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Voice Interviews</p>
+                <p className="text-2xl font-bold text-gray-900">{patientProfile.stats.totalInterviews}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <ChatBubbleLeftIcon className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Journal Entries</p>
+                <p className="text-2xl font-bold text-gray-900">{patientProfile.stats.totalJournalEntries}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6">
+            <div className="flex items-center space-x-3">
+              <CalendarIcon className="h-8 w-8 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600">Last Active</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {new Date(patientProfile.stats.lastActive).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -108,151 +231,46 @@ const Profile = () => {
             </label>
             <input
               type="text"
-              value={profile.name}
-              onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+              value={patientProfile.name}
+              onChange={(e) => setPatientProfile(prev => ({ ...prev, name: e.target.value }))}
               className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-600 focus:outline-none"
             />
           </div>
           
           <div>
             <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Email Address
+              Age
             </label>
             <input
-              type="email"
-              value={profile.email}
-              onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+              type="number"
+              value={patientProfile.age}
+              onChange={(e) => setPatientProfile(prev => ({ ...prev, age: e.target.value }))}
               className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-600 focus:outline-none"
             />
           </div>
-        </div>
-      </div>
-
-      {/* Accessibility Settings */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <EyeIcon className="h-6 w-6 text-purple-600" />
-          <h2 className="text-2xl font-bold text-gray-900">
-            Accessibility Settings
-          </h2>
-        </div>
-        
-        <div className="space-y-6">
-          {/* Theme Selection */}
+          
           <div>
             <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Theme
+              Diagnosis
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {themes.map((theme) => (
-                <button
-                  key={theme.value}
-                  onClick={() => setProfile(prev => ({
-                    ...prev,
-                    preferences: { ...prev.preferences, theme: theme.value }
-                  }))}
-                  className={`p-4 rounded-xl border-2 transition-all text-left ${
-                    profile.preferences.theme === theme.value
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <h3 className="font-semibold text-gray-900">{theme.label}</h3>
-                  <p className="text-sm text-gray-600">{theme.description}</p>
-                </button>
-              ))}
-            </div>
+            <input
+              type="text"
+              value={patientProfile.diagnosis}
+              onChange={(e) => setPatientProfile(prev => ({ ...prev, diagnosis: e.target.value }))}
+              className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-600 focus:outline-none"
+            />
           </div>
-
-          {/* Font Size */}
+          
           <div>
             <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Text Size
+              Primary Caregiver
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {fontSizes.map((size) => (
-                <button
-                  key={size.value}
-                  onClick={() => setProfile(prev => ({
-                    ...prev,
-                    preferences: { ...prev.preferences, fontSize: size.value }
-                  }))}
-                  className={`p-4 rounded-xl border-2 transition-all text-left ${
-                    profile.preferences.fontSize === size.value
-                      ? 'border-purple-600 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <h3 className="font-semibold text-gray-900">{size.label}</h3>
-                  <p className="text-sm text-gray-600">{size.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Accessibility Options */}
-          <div>
-            <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Additional Accessibility Options
-            </label>
-            <div className="space-y-4">
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={profile.preferences.accessibility.highContrast}
-                  onChange={(e) => setProfile(prev => ({
-                    ...prev,
-                    preferences: {
-                      ...prev.preferences,
-                      accessibility: {
-                        ...prev.preferences.accessibility,
-                        highContrast: e.target.checked
-                      }
-                    }
-                  }))}
-                  className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="text-lg text-gray-900">High Contrast Mode</span>
-              </label>
-              
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={profile.preferences.accessibility.screenReader}
-                  onChange={(e) => setProfile(prev => ({
-                    ...prev,
-                    preferences: {
-                      ...prev.preferences,
-                      accessibility: {
-                        ...prev.preferences.accessibility,
-                        screenReader: e.target.checked
-                      }
-                    }
-                  }))}
-                  className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="text-lg text-gray-900">Screen Reader Support</span>
-              </label>
-              
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={profile.preferences.accessibility.voiceInput}
-                  onChange={(e) => setProfile(prev => ({
-                    ...prev,
-                    preferences: {
-                      ...prev.preferences,
-                      accessibility: {
-                        ...prev.preferences.accessibility,
-                        voiceInput: e.target.checked
-                      }
-                    }
-                  }))}
-                  className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="text-lg text-gray-900">Voice Input Support</span>
-              </label>
-            </div>
+            <input
+              type="text"
+              value={patientProfile.caregiver}
+              onChange={(e) => setPatientProfile(prev => ({ ...prev, caregiver: e.target.value }))}
+              className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-600 focus:outline-none"
+            />
           </div>
         </div>
       </div>
@@ -273,8 +291,8 @@ const Profile = () => {
             </label>
             <input
               type="text"
-              value={profile.emergencyContact.name}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.emergencyContact.name}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 emergencyContact: { ...prev.emergencyContact, name: e.target.value }
               }))}
@@ -289,8 +307,8 @@ const Profile = () => {
             </label>
             <input
               type="tel"
-              value={profile.emergencyContact.phone}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.emergencyContact.phone}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 emergencyContact: { ...prev.emergencyContact, phone: e.target.value }
               }))}
@@ -305,8 +323,8 @@ const Profile = () => {
             </label>
             <input
               type="text"
-              value={profile.emergencyContact.relationship}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.emergencyContact.relationship}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 emergencyContact: { ...prev.emergencyContact, relationship: e.target.value }
               }))}
@@ -332,8 +350,8 @@ const Profile = () => {
               Medical Conditions
             </label>
             <textarea
-              value={profile.medicalInfo.conditions.join(', ')}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.medicalInfo.conditions.join(', ')}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 medicalInfo: {
                   ...prev.medicalInfo,
@@ -351,8 +369,8 @@ const Profile = () => {
               Medications
             </label>
             <textarea
-              value={profile.medicalInfo.medications.join(', ')}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.medicalInfo.medications.join(', ')}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 medicalInfo: {
                   ...prev.medicalInfo,
@@ -370,8 +388,8 @@ const Profile = () => {
               Allergies
             </label>
             <textarea
-              value={profile.medicalInfo.allergies.join(', ')}
-              onChange={(e) => setProfile(prev => ({
+              value={patientProfile.medicalInfo.allergies.join(', ')}
+              onChange={(e) => setPatientProfile(prev => ({
                 ...prev,
                 medicalInfo: {
                   ...prev.medicalInfo,
@@ -386,40 +404,15 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Notifications */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <BellIcon className="h-6 w-6 text-purple-600" />
-          <h2 className="text-2xl font-bold text-gray-900">
-            Notifications
-          </h2>
-        </div>
-        
-        <div className="space-y-4">
-          <label className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              checked={profile.preferences.notifications}
-              onChange={(e) => setProfile(prev => ({
-                ...prev,
-                preferences: { ...prev.preferences, notifications: e.target.checked }
-              }))}
-              className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-            />
-            <span className="text-lg text-gray-900">Enable notifications</span>
-          </label>
-        </div>
-      </div>
-
       {/* Save Button */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-8">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Save Your Changes
+              Save Patient Information
             </h3>
             <p className="text-gray-600">
-              Your profile settings will be updated across all devices
+              Patient profile settings will be updated
             </p>
           </div>
           <button

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CpuChipIcon, SparklesIcon, HeartIcon, UserIcon, LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
-const SignIn = () => {
+const SignIn = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
     email: '',
@@ -32,14 +32,15 @@ const SignIn = () => {
         id: '1',
         name: formData.email.split('@')[0], // Use email prefix as name
         email: formData.email,
+        role: 'caregiver',
         created_at: new Date().toISOString()
       };
 
-      // Store user data in localStorage (in a real app, you'd validate with backend)
-      localStorage.setItem('mindbloom_user', JSON.stringify(userData));
+      // Generate a simple token
+      const token = `demo-token-${Date.now()}`;
       
-      // Redirect to dashboard
-      window.location.href = '/';
+      // Call the onLogin prop with the token
+      onLogin(token);
     } catch (error) {
       setError('Login failed. Please try again.');
     } finally {
@@ -65,14 +66,15 @@ const SignIn = () => {
         id: '1',
         name: formData.name,
         email: formData.email,
+        role: 'caregiver',
         created_at: new Date().toISOString()
       };
 
-      // Store user data in localStorage (in a real app, you'd send to backend)
-      localStorage.setItem('mindbloom_user', JSON.stringify(userData));
+      // Generate a simple token
+      const token = `demo-token-${Date.now()}`;
       
-      // Redirect to dashboard
-      window.location.href = '/';
+      // Call the onLogin prop with the token
+      onLogin(token);
     } catch (error) {
       setError('Sign up failed. Please try again.');
     } finally {
@@ -83,19 +85,20 @@ const SignIn = () => {
   const handleTestingAccount = () => {
     setLoading(true);
     
-    // Create demo user data
+    // Create demo caregiver user data
     const demoUser = {
       id: 'demo-1',
-      name: 'Demo User',
-      email: 'demo@mindbloom.com',
+      name: 'Demo Caregiver',
+      email: 'caregiver@mindbloom.com',
+      role: 'caregiver',
       created_at: new Date().toISOString()
     };
 
-    // Store demo user data
-    localStorage.setItem('mindbloom_user', JSON.stringify(demoUser));
+    // Generate a demo token
+    const token = `demo-caregiver-token-${Date.now()}`;
     
-    // Redirect to dashboard
-    window.location.href = '/';
+    // Call the onLogin prop with the token
+    onLogin(token);
   };
 
   return (
@@ -112,7 +115,7 @@ const SignIn = () => {
             Welcome to MindBloom
           </h1>
           <p className="text-lg text-gray-600">
-            Your compassionate memory companion
+            Caregiver Portal - Manage Your Loved Ones
           </p>
         </div>
 
@@ -323,10 +326,10 @@ const SignIn = () => {
               disabled={loading}
               className="w-full bg-green-600 text-white py-3 px-6 rounded-lg text-lg font-semibold hover:bg-green-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Loading...' : 'Testing Account'}
+              {loading ? 'Loading...' : 'Testing Account - Caregiver Login'}
             </button>
             <p className="text-center text-sm text-gray-500 mt-2">
-              Quick access with demo credentials
+              Quick access as a caregiver with demo credentials
             </p>
           </div>
         </div>
@@ -340,10 +343,10 @@ const SignIn = () => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  AI-Powered Memory Support
+                  Multi-Patient Management
                 </h3>
                 <p className="text-gray-600 text-base">
-                  Gentle prompts and conversations to help recall precious memories
+                  Manage multiple patients and their memories from one dashboard
                 </p>
               </div>
             </div>
@@ -354,10 +357,10 @@ const SignIn = () => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  Compassionate Design
+                  Memory Support
                 </h3>
                 <p className="text-gray-600 text-base">
-                  Large, clear text and simple navigation for easy use
+                  Help your loved ones preserve and cherish precious memories
                 </p>
               </div>
             </div>
@@ -368,10 +371,10 @@ const SignIn = () => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  Interactive Memory Garden
+                  AI-Powered Insights
                 </h3>
                 <p className="text-gray-600 text-base">
-                  Explore your memories in a beautiful 3D environment
+                  Get insights and support for better care management
                 </p>
               </div>
             </div>
@@ -380,7 +383,7 @@ const SignIn = () => {
 
         {/* Footer */}
         <div className="text-center text-gray-500 text-sm">
-          <p>MindBloom - Empowering memories, one moment at a time</p>
+          <p>MindBloom - Empowering caregivers, preserving memories</p>
           <p className="mt-2">© 2024 MindBloom. All rights reserved.</p>
         </div>
       </div>

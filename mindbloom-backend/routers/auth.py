@@ -7,11 +7,11 @@ import os
 from datetime import datetime
 
 from models.user import User, UserCreate, UserUpdate, UserResponse, UserRole
-from services.auth_service import Auth0Service
+from services.auth_service import SimpleAuthService
 
 router = APIRouter()
 security = HTTPBearer()
-auth0_service = Auth0Service()
+auth_service = SimpleAuthService()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -21,8 +21,8 @@ async def get_current_user(
     try:
         token = credentials.credentials
         
-        # Verify token with Auth0
-        payload = await auth0_service.verify_token(token)
+        # Verify token with simple auth service
+        payload = await auth_service.verify_token(token)
         
         user_id = payload.get("sub")
         if not user_id:
@@ -32,7 +32,7 @@ async def get_current_user(
         user_data = await db.users.find_one({"auth0_id": user_id})
         if not user_data:
             # Create user if they don't exist
-            user_info = await auth0_service.get_user_info(token)
+            user_info = await auth_service.get_user_info(token)
             user_data = {
                 "auth0_id": user_id,
                 "email": user_info.get("email", ""),

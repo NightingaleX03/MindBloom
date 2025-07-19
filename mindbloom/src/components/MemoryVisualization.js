@@ -1,0 +1,253 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  SparklesIcon, 
+  EyeIcon, 
+  PlayIcon, 
+  PauseIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+
+const MemoryVisualization = ({ memory, onClose }) => {
+  const [visualization, setVisualization] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentScene, setCurrentScene] = useState(0);
+
+  useEffect(() => {
+    fetchVisualization();
+  }, [memory]);
+
+  const fetchVisualization = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/memories/${memory.id}/visualization`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch visualization');
+      }
+      const data = await response.json();
+      setVisualization(data);
+    } catch (err) {
+      console.error('Error fetching visualization:', err);
+      setError('Failed to generate visualization');
+      // Set fallback visualization
+      setVisualization({
+        visual_description: `A beautiful scene representing the memory '${memory.title}' with a ${memory.mood} atmosphere. The visualization captures the emotional essence and key moments of this precious memory.`,
+        scene_elements: [
+          "Emotional atmosphere",
+          "Memory-specific elements",
+          "Mood-appropriate lighting",
+          "Nostalgic details"
+        ],
+        color_palette: ["#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1"],
+        mood_enhancement: memory.mood || "neutral"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const getMoodColor = (mood) => {
+    const colors = {
+      happy: 'text-yellow-600',
+      sad: 'text-blue-600',
+      excited: 'text-red-600',
+      calm: 'text-green-600',
+      peaceful: 'text-blue-500',
+      wonder: 'text-purple-600',
+      satisfied: 'text-orange-600',
+      nostalgic: 'text-pink-600',
+      anxious: 'text-orange-600',
+      neutral: 'text-gray-600'
+    };
+    return colors[mood] || colors.neutral;
+  };
+
+  const getMoodBgColor = (mood) => {
+    const colors = {
+      happy: 'bg-yellow-50',
+      sad: 'bg-blue-50',
+      excited: 'bg-red-50',
+      calm: 'bg-green-50',
+      peaceful: 'bg-blue-50',
+      wonder: 'bg-purple-50',
+      satisfied: 'bg-orange-50',
+      nostalgic: 'bg-pink-50',
+      anxious: 'bg-orange-50',
+      neutral: 'bg-gray-50'
+    };
+    return colors[mood] || colors.neutral;
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-xl text-gray-600">Generating AI visualization...</p>
+            <p className="text-sm text-gray-500 mt-2">Creating a visual replay of your memory</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-purple-100 rounded-full">
+              <SparklesIcon className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                AI Memory Visualization
+              </h2>
+              <p className="text-gray-600">{memory.title}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{error}</p>
+            <button
+              onClick={fetchVisualization}
+              className="mt-2 text-red-600 hover:text-red-700 text-sm flex items-center space-x-1"
+            >
+              <ArrowPathIcon className="h-4 w-4" />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {visualization && (
+          <div className="space-y-6">
+            {/* Visual Scene */}
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-8">
+              <div className="flex items-center space-x-3 mb-4">
+                <EyeIcon className="h-6 w-6 text-purple-600" />
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Visual Scene
+                </h3>
+                <button
+                  onClick={togglePlayback}
+                  className="ml-auto p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  {isPlaying ? (
+                    <PauseIcon className="h-5 w-5" />
+                  ) : (
+                    <PlayIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <p className="text-gray-700 leading-relaxed text-lg">
+                  {visualization.visual_description}
+                </p>
+              </div>
+            </div>
+
+            {/* Scene Elements */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Scene Elements
+                </h3>
+                <div className="space-y-3">
+                  {visualization.scene_elements.map((element, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                      <span className="text-gray-700">{element}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Palette */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Color Palette
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {visualization.color_palette.map((color, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-3 p-3 rounded-lg"
+                      style={{ backgroundColor: color + '20' }}
+                    >
+                      <div
+                        className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <span className="text-sm font-mono">{color}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mood Enhancement */}
+            <div className={`${getMoodBgColor(memory.mood)} rounded-xl p-6`}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Mood Enhancement
+              </h3>
+              <div className="flex items-center space-x-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getMoodColor(memory.mood)}`}>
+                  {memory.mood}
+                </span>
+                <span className="text-gray-700">
+                  {visualization.mood_enhancement}
+                </span>
+              </div>
+            </div>
+
+            {/* Original Memory */}
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Original Memory
+              </h3>
+              <div className="bg-white rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  {memory.title}
+                </h4>
+                <p className="text-gray-700 leading-relaxed">
+                  {memory.content}
+                </p>
+                <div className="flex items-center justify-between mt-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getMoodColor(memory.mood)}`}>
+                    {memory.mood}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(memory.date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MemoryVisualization; 
