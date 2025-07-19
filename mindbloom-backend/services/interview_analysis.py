@@ -21,7 +21,13 @@ except ImportError as e:
     SPEECH_RECOGNITION_AVAILABLE = False
 
 if GEMINI_AVAILABLE:
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        print(f"✅ Gemini AI configured with API key: {api_key[:10]}...")
+    else:
+        print("⚠️ GEMINI_API_KEY not found in environment variables")
+        GEMINI_AVAILABLE = False
 
 class InterviewAnalysisService:
     def __init__(self):
@@ -118,6 +124,7 @@ class InterviewAnalysisService:
         """
         try:
             if GEMINI_AVAILABLE and self.model:
+                print(f"🤖 Using Gemini AI to analyze response: '{response_text[:50]}...'")
                 analysis_prompt = f"""
                 Analyze this dementia patient's response to a memory question.
                 
@@ -137,7 +144,9 @@ class InterviewAnalysisService:
                 
                 response = await self._get_gemini_response(analysis_prompt)
                 analysis = json.loads(response)
+                print(f"✅ Gemini analysis completed for response")
             else:
+                print(f"⚠️ Using fallback analysis (Gemini not available)")
                 # Fallback analysis
                 analysis = {
                     "memory_recall_accuracy": 8.5,
@@ -293,6 +302,190 @@ class InterviewAnalysisService:
                 'error': str(e),
                 'feedback': {}
             }
+    
+    async def find_relevant_memories(self, current_response: str, patient_id: str, question: str) -> Dict:
+        """
+        Find existing memories that are relevant to the current response
+        """
+        try:
+            # Mock existing memories for demonstration
+            # In a real implementation, this would query the database
+            existing_memories = [
+                {
+                    "id": "mem-1",
+                    "title": "Grandmother's Kitchen",
+                    "content": "I remember when my grandmother would make the most wonderful chocolate chip cookies. The smell would fill the entire house, and we would all gather in the kitchen to watch her work her magic.",
+                    "emotional_tone": 9.2,
+                    "memory_type": "episodic",
+                    "created_at": "2024-01-10T10:30:00Z",
+                    "tags": ["family", "cooking", "grandmother", "childhood"]
+                },
+                {
+                    "id": "mem-2", 
+                    "title": "Camping with Parents",
+                    "content": "My favorite memory with my parents was when we went camping in the mountains. We sat around the campfire telling stories, and I felt so safe and loved.",
+                    "emotional_tone": 9.5,
+                    "memory_type": "episodic",
+                    "created_at": "2024-01-12T14:20:00Z",
+                    "tags": ["family", "outdoors", "camping", "parents"]
+                },
+                {
+                    "id": "mem-3",
+                    "title": "College Graduation",
+                    "content": "I was really proud when I graduated from college. It was the first person in my family to get a degree, and my parents were so proud of me.",
+                    "emotional_tone": 9.8,
+                    "memory_type": "episodic",
+                    "created_at": "2024-01-08T16:45:00Z",
+                    "tags": ["achievement", "education", "family", "pride"]
+                },
+                {
+                    "id": "mem-4",
+                    "title": "Grandmother's Garden",
+                    "content": "The place that holds special meaning for me is my grandmother's garden. She taught me how to plant flowers and vegetables, and I still remember the smell of fresh soil.",
+                    "emotional_tone": 8.9,
+                    "memory_type": "episodic",
+                    "created_at": "2024-01-05T09:15:00Z",
+                    "tags": ["grandmother", "garden", "nature", "learning"]
+                },
+                {
+                    "id": "mem-5",
+                    "title": "Best Friend Sarah",
+                    "content": "My best friend growing up was Sarah. We met in kindergarten and were inseparable. She always knew how to make me laugh when I was sad.",
+                    "emotional_tone": 8.7,
+                    "memory_type": "episodic",
+                    "created_at": "2024-01-03T11:30:00Z",
+                    "tags": ["friendship", "childhood", "support", "laughter"]
+                }
+            ]
+            
+            if GEMINI_AVAILABLE and self.model:
+                print(f"🤖 Using Gemini AI to find relevant memories for: '{current_response[:50]}...'")
+                
+                memory_prompt = f"""
+                Analyze this patient's current response and find the most relevant existing memories.
+                
+                Current Question: "{question}"
+                Current Response: "{current_response}"
+                
+                Available Memories:
+                {json.dumps(existing_memories, indent=2)}
+                
+                Find 2-3 memories that are most relevant to the current response based on:
+                1. Emotional similarity (similar feelings, tone)
+                2. Content similarity (related topics, people, places)
+                3. Memory type compatibility
+                4. Temporal relevance (time period, era)
+                
+                For each relevant memory, provide:
+                - Relevance score (0-10)
+                - Connection explanation
+                - Suggested prompt to share the memory
+                
+                Return in JSON format with structure:
+                {{
+                    "relevant_memories": [
+                        {{
+                            "memory_id": "mem-1",
+                            "relevance_score": 9.2,
+                            "connection": "Both memories involve grandmother and family traditions",
+                            "suggested_prompt": "This reminds me of when your grandmother used to make cookies. Would you like to share more about that time?"
+                        }}
+                    ],
+                    "emotional_theme": "family warmth and tradition",
+                    "suggested_follow_up": "It sounds like family traditions are very important to you. What other family traditions do you remember?"
+                }}
+                """
+                
+                response = await self._get_gemini_response(memory_prompt)
+                analysis = json.loads(response)
+                print(f"✅ Memory relevance analysis completed")
+                
+            else:
+                print(f"⚠️ Using fallback memory matching")
+                # Fallback: simple keyword matching
+                analysis = self._fallback_memory_matching(current_response, existing_memories, question)
+            
+            return {
+                'current_response': current_response,
+                'question': question,
+                'patient_id': patient_id,
+                'memory_suggestions': analysis,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            print(f"Error finding relevant memories: {str(e)}")
+            return {
+                'error': str(e),
+                'memory_suggestions': {}
+            }
+    
+    def _fallback_memory_matching(self, current_response: str, existing_memories: List[Dict], question: str) -> Dict:
+        """
+        Fallback memory matching using simple keyword analysis
+        """
+        # Simple keyword matching
+        response_lower = current_response.lower()
+        relevant_memories = []
+        
+        # Keywords to look for
+        family_keywords = ['family', 'mother', 'father', 'grandmother', 'grandfather', 'parent']
+        cooking_keywords = ['cook', 'kitchen', 'food', 'recipe', 'bake']
+        outdoor_keywords = ['camping', 'outdoor', 'nature', 'garden', 'mountain']
+        achievement_keywords = ['proud', 'graduation', 'degree', 'accomplishment', 'success']
+        friendship_keywords = ['friend', 'best friend', 'childhood', 'school']
+        
+        for memory in existing_memories:
+            relevance_score = 0
+            connection = ""
+            
+            # Check for family connections
+            if any(keyword in response_lower for keyword in family_keywords):
+                if any(keyword in memory['content'].lower() for keyword in family_keywords):
+                    relevance_score += 3
+                    connection = "Both memories involve family relationships"
+            
+            # Check for cooking/food connections
+            if any(keyword in response_lower for keyword in cooking_keywords):
+                if any(keyword in memory['content'].lower() for keyword in cooking_keywords):
+                    relevance_score += 2
+                    connection = "Both memories involve cooking and food traditions"
+            
+            # Check for outdoor/nature connections
+            if any(keyword in response_lower for keyword in outdoor_keywords):
+                if any(keyword in memory['content'].lower() for keyword in outdoor_keywords):
+                    relevance_score += 2
+                    connection = "Both memories involve outdoor activities and nature"
+            
+            # Check for achievement connections
+            if any(keyword in response_lower for keyword in achievement_keywords):
+                if any(keyword in memory['content'].lower() for keyword in achievement_keywords):
+                    relevance_score += 2
+                    connection = "Both memories involve personal achievements and pride"
+            
+            # Check for friendship connections
+            if any(keyword in response_lower for keyword in friendship_keywords):
+                if any(keyword in memory['content'].lower() for keyword in friendship_keywords):
+                    relevance_score += 2
+                    connection = "Both memories involve friendships and relationships"
+            
+            if relevance_score > 0:
+                relevant_memories.append({
+                    "memory_id": memory['id'],
+                    "relevance_score": min(relevance_score, 9.0),
+                    "connection": connection,
+                    "suggested_prompt": f"This reminds me of your memory about {memory['title']}. Would you like to share more about that time?",
+                    "memory_title": memory['title']
+                })
+        
+        # Sort by relevance score
+        relevant_memories.sort(key=lambda x: x['relevance_score'], reverse=True)
+        
+        return {
+            "relevant_memories": relevant_memories[:3],
+            "emotional_theme": "family and personal connections",
+            "suggested_follow_up": "It sounds like these memories are very meaningful to you. What other memories come to mind?"
+        }
     
     async def _get_gemini_response(self, prompt: str) -> str:
         """

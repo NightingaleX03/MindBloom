@@ -78,5 +78,15 @@
     "interview_url": "https://ribbon.ai/interview/interview-1-8",
     "flow_id": "flow-1",
     "type": "memory_interview"
+  },
+  {
+    "id": "interview-1-9",
+    "patient_id": "1",
+    "patient_name": "Sarah Johnson",
+    "status": "created",
+    "created_at": "2024-01-01T00:00:00Z",
+    "interview_url": "https://ribbon.ai/interview/interview-1-9",
+    "flow_id": "flow-1",
+    "type": "memory_interview"
   }
 ]

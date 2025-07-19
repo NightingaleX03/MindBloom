@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MicrophoneIcon, 
   PlayIcon, 
@@ -9,7 +9,8 @@ import {
   UserIcon,
   ChatBubbleLeftIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  StopIcon
 } from '@heroicons/react/24/outline';
 
 // Brand Colors
@@ -95,6 +96,21 @@ const VoiceInterviews = ({ selectedPatient }) => {
   const [analysisResults, setAnalysisResults] = useState(null);
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [memorySuggestions, setMemorySuggestions] = useState(null);
+  
+  // Voice recording states
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [transcription, setTranscription] = useState('');
+  const [recordingError, setRecordingError] = useState('');
+  
+  // Refs for recording
+  const recordingIntervalRef = useRef(null);
+  const streamRef = useRef(null);
 
   // Mock data for demonstration
   const mockInterviews = [
@@ -150,6 +166,268 @@ const VoiceInterviews = ({ selectedPatient }) => {
     setInterviews(mockInterviews);
     setFlows(mockFlows);
   }, [selectedPatient]);
+
+  // Cleanup recording resources
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      setRecordingError('');
+      setAudioChunks([]);
+      setRecordingTime(0);
+      setTranscription('');
+      
+      // Check if browser supports MediaRecorder
+      if (!window.MediaRecorder) {
+        setRecordingError('Your browser does not support audio recording. Please use a modern browser.');
+        return;
+      }
+      
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        } 
+      });
+      
+      streamRef.current = stream;
+      
+      // Create MediaRecorder with fallback mime types
+      let recorder;
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus'
+      ];
+      
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          recorder = new MediaRecorder(stream, { mimeType });
+          break;
+        }
+      }
+      
+      if (!recorder) {
+        recorder = new MediaRecorder(stream);
+      }
+      
+      const chunks = [];
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        setAudioChunks(chunks);
+      };
+      
+      recorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event);
+        setRecordingError('Recording failed. Please try again.');
+        setIsRecording(false);
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+      
+      // Start recording timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      if (error.name === 'NotAllowedError') {
+        setRecordingError('Microphone access denied. Please allow microphone permissions and try again.');
+      } else if (error.name === 'NotFoundError') {
+        setRecordingError('No microphone found. Please connect a microphone and try again.');
+      } else {
+        setRecordingError('Unable to access microphone. Please check permissions and try again.');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      
+      // Process the recorded audio
+      processRecordedAudio();
+    }
+  };
+
+  const processRecordedAudio = async () => {
+    if (!audioBlob) return;
+    
+    setIsProcessingAudio(true);
+    
+    try {
+      // Convert audio to text using Web Speech API
+      const text = await transcribeAudio(audioBlob);
+      setTranscription(text);
+      setCurrentResponse(text);
+      
+      // Also send audio file to backend for analysis
+      await analyzeVoiceResponse(audioBlob, text);
+      
+    } catch (error) {
+      console.error('Error processing audio:', error);
+      setRecordingError('Failed to process audio. Please try again.');
+    } finally {
+      setIsProcessingAudio(false);
+    }
+  };
+
+  const analyzeVoiceResponse = async (audioBlob, transcription) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio_file', audioBlob, 'recording.webm');
+      formData.append('question', interviewQuestions[currentQuestion]);
+      formData.append('patient_id', selectedPatient);
+
+      const response = await fetch('http://localhost:8000/api/interview-analysis/analyze-voice-response', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const analysis = await response.json();
+        setAnalysisResults(analysis.response_analysis);
+        setMemorySuggestions(analysis.memory_suggestions);
+        
+        // Create memory from the response
+        await createMemoryFromResponse(transcription, analysis);
+        
+        // Get real-time feedback
+        const feedbackResponse = await fetch('http://localhost:8000/api/interview-analysis/real-time-feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            current_response: transcription,
+            question: interviewQuestions[currentQuestion]
+          })
+        });
+        
+        if (feedbackResponse.ok) {
+          const feedback = await feedbackResponse.json();
+          setRealTimeFeedback(feedback);
+        }
+      }
+    } catch (error) {
+      console.error('Voice analysis failed:', error);
+      // Fallback to text analysis
+      await analyzeResponse(transcription);
+    }
+  };
+
+  const createMemoryFromResponse = async (transcription, analysis) => {
+    try {
+      const memoryData = {
+        patient_id: selectedPatient,
+        title: `Memory Interview - Question ${currentQuestion + 1}`,
+        content: transcription,
+        question: interviewQuestions[currentQuestion],
+        analysis: analysis.response_analysis,
+        memory_type: analysis.response_analysis?.memory_type || 'episodic',
+        emotional_tone: analysis.response_analysis?.emotional_engagement || 8.0,
+        cognitive_score: analysis.response_analysis?.cognitive_coherence || 8.0,
+        dementia_indicators: analysis.response_analysis?.dementia_indicators || {},
+        care_recommendations: analysis.response_analysis?.care_recommendations || [],
+        created_at: new Date().toISOString(),
+        source: 'voice_interview'
+      };
+
+      const response = await fetch('http://localhost:8000/api/memories/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(memoryData)
+      });
+
+      if (response.ok) {
+        const memory = await response.json();
+        console.log('Memory created:', memory);
+        setCurrentResponse(transcription);
+      }
+    } catch (error) {
+      console.error('Failed to create memory:', error);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob) => {
+    return new Promise((resolve, reject) => {
+      // Create audio element to play the recording
+      const audio = new Audio(URL.createObjectURL(audioBlob));
+      
+      // Use Web Speech API for transcription
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          resolve(transcript);
+        };
+        
+        recognition.onerror = (event) => {
+          reject(new Error('Speech recognition failed'));
+        };
+        
+        // Start recognition
+        recognition.start();
+        
+        // Play the audio for recognition
+        audio.play();
+        
+      } else {
+        // Fallback: return a placeholder text
+        resolve("Patient response to memory question about family traditions.");
+      }
+    });
+  };
+
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const createMemoryInterview = async () => {
     setLoading(true);
@@ -240,12 +518,26 @@ const VoiceInterviews = ({ selectedPatient }) => {
     setCurrentQuestion(0);
     setInterviewProgress(0);
     setIsRecording(false);
+    setCurrentResponse('');
+    setAnalysisResults(null);
+    setRealTimeFeedback(null);
+    setMemorySuggestions(null);
+    setTranscription('');
+    setAudioBlob(null);
+    setAudioUrl(null);
   };
 
   const handleNextQuestion = () => {
     if (currentQuestion < interviewQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setInterviewProgress(((currentQuestion + 1) / interviewQuestions.length) * 100);
+      setCurrentResponse('');
+      setAnalysisResults(null);
+      setRealTimeFeedback(null);
+      setMemorySuggestions(null);
+      setTranscription('');
+      setAudioBlob(null);
+      setAudioUrl(null);
     } else {
       // Interview completed
       setShowInterviewDemo(false);
@@ -262,22 +554,10 @@ const VoiceInterviews = ({ selectedPatient }) => {
   };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // Simulate recording for 3 seconds
-    if (!isRecording) {
-      setTimeout(() => {
-        setIsRecording(false);
-        // Simulate response after recording
-        const responses = [
-          "I remember when my grandmother would make the most wonderful chocolate chip cookies. The smell would fill the entire house, and we would all gather in the kitchen to watch her work her magic.",
-          "My favorite memory with my parents was when we went camping in the mountains. We sat around the campfire telling stories, and I felt so safe and loved.",
-          "I was really proud when I graduated from college. It was the first person in my family to get a degree, and my parents were so proud of me.",
-          "The place that holds special meaning for me is my grandmother's garden. She taught me how to plant flowers and vegetables, and I still remember the smell of fresh soil.",
-          "My best friend growing up was Sarah. We met in kindergarten and were inseparable. She always knew how to make me laugh when I was sad."
-        ];
-        setCurrentResponse(responses[currentQuestion]);
-        analyzeResponse(responses[currentQuestion]);
-      }, 3000);
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
     }
   };
 
@@ -289,7 +569,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       formData.append('question', interviewQuestions[currentQuestion]);
       formData.append('patient_id', selectedPatient);
 
-      const response = await fetch('http://localhost:8000/api/interview-analysis/simulate-analysis', {
+      const response = await fetch('http://localhost:8000/api/interview-analysis/analyze-response', {
         method: 'POST',
         body: formData
       });
@@ -678,11 +958,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-2">Generated Memory:</h4>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  "I remember when I was a child, my grandmother would always make the most wonderful 
-                  chocolate chip cookies. The smell would fill the entire house, and we would all gather 
-                  in the kitchen to watch her work her magic. She had this special wooden spoon that 
-                  she used for everything, and she would let me help her mix the ingredients. The cookies 
-                  were always perfectly golden brown and so warm when they came out of the oven..."
+                  {currentResponse || transcription || "Memory will be generated from your voice responses..."}
                 </p>
               </div>
               
@@ -766,39 +1042,111 @@ const VoiceInterviews = ({ selectedPatient }) => {
                 {interviewQuestions[currentQuestion]}
               </h3>
               
-              {/* Recording Interface */}
-              <div className="flex items-center justify-center space-x-4 mb-6">
-                <button
-                  onClick={toggleRecording}
-                  className={`p-4 rounded-full transition-all duration-200 ${
-                    isRecording ? 'animate-pulse' : ''
-                  }`}
-                  style={{
-                    backgroundColor: isRecording ? BRAND_COLORS.accent : BRAND_COLORS.primary,
-                    color: BRAND_COLORS.white
-                  }}
+              {/* Instructions */}
+              <div 
+                className="rounded-lg p-3 mb-4"
+                style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+              >
+                <p 
+                  className="text-sm"
+                  style={{ color: BRAND_COLORS.accent }}
                 >
-                  {isRecording ? (
-                    <PauseIcon className="h-8 w-8" />
-                  ) : (
-                    <MicrophoneIcon className="h-8 w-8" />
-                  )}
-                </button>
-                
-                <div className="text-center">
-                  <p 
-                    className="text-lg font-medium"
-                    style={{ color: BRAND_COLORS.accent }}
+                  <strong>Instructions:</strong> Click the microphone button to start recording your response. 
+                  Speak clearly and naturally about your memory. Click the stop button when you're finished.
+                </p>
+              </div>
+              
+              {/* Recording Interface */}
+              <div className="space-y-4 mb-6">
+                {/* Recording Controls */}
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={toggleRecording}
+                    disabled={isProcessingAudio}
+                    className={`p-4 rounded-full transition-all duration-200 ${
+                      isRecording ? 'animate-pulse' : ''
+                    } ${isProcessingAudio ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    style={{
+                      backgroundColor: isRecording ? BRAND_COLORS.accent : BRAND_COLORS.primary,
+                      color: BRAND_COLORS.white
+                    }}
                   >
-                    {isRecording ? 'Recording...' : 'Click to Record'}
-                  </p>
-                  <p 
-                    className="text-sm"
-                    style={{ color: BRAND_COLORS.accent }}
-                  >
-                    Speak naturally about your memory
-                  </p>
+                    {isRecording ? (
+                      <StopIcon className="h-8 w-8" />
+                    ) : isProcessingAudio ? (
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    ) : (
+                      <MicrophoneIcon className="h-8 w-8" />
+                    )}
+                  </button>
+                  
+                  <div className="text-center">
+                    <p 
+                      className="text-lg font-medium"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      {isRecording ? `Recording... ${formatRecordingTime(recordingTime)}` : 
+                       isProcessingAudio ? 'Processing Audio...' : 'Click to Record'}
+                    </p>
+                    <p 
+                      className="text-sm"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      {isRecording ? 'Click to stop recording' : 
+                       isProcessingAudio ? 'Converting speech to text...' : 'Speak naturally about your memory'}
+                    </p>
+                  </div>
                 </div>
+
+                {/* Recording Error */}
+                {recordingError && (
+                  <div 
+                    className="rounded-lg p-3 text-center"
+                    style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}
+                  >
+                    <p className="text-sm text-red-600">{recordingError}</p>
+                  </div>
+                )}
+
+                {/* Audio Playback */}
+                {audioUrl && !isRecording && (
+                  <div 
+                    className="rounded-lg p-4"
+                    style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+                  >
+                    <h4 
+                      className="font-semibold mb-2"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      Your Recording:
+                    </h4>
+                    <audio controls className="w-full">
+                      <source src={audioUrl} type="audio/webm" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+
+                {/* Transcription Display */}
+                {transcription && (
+                  <div 
+                    className="rounded-lg p-4"
+                    style={{ backgroundColor: BRAND_COLORS.accentLight }}
+                  >
+                    <h4 
+                      className="font-semibold mb-2"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      Transcribed Response:
+                    </h4>
+                    <p 
+                      className="text-sm italic"
+                      style={{ color: BRAND_COLORS.accent }}
+                    >
+                      "{transcription}"
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* AI Analysis Results */}
@@ -819,7 +1167,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
                       className="text-sm italic"
                       style={{ color: BRAND_COLORS.accent }}
                     >
-                      "{currentResponse}"
+                      "{transcription || currentResponse}"
                     </p>
                   </div>
 
@@ -962,6 +1310,80 @@ const VoiceInterviews = ({ selectedPatient }) => {
                       ))}
                     </ul>
                   </div>
+
+                  {/* Memory Suggestions */}
+                  {memorySuggestions && memorySuggestions.memory_suggestions?.relevant_memories?.length > 0 && (
+                    <div 
+                      className="rounded-lg p-4"
+                      style={{ backgroundColor: BRAND_COLORS.primaryLight }}
+                    >
+                      <h4 
+                        className="font-semibold mb-2"
+                        style={{ color: BRAND_COLORS.accent }}
+                      >
+                        📖 Related Memories:
+                      </h4>
+                      <div className="space-y-3">
+                        {memorySuggestions.memory_suggestions.relevant_memories.map((memory, index) => (
+                          <div 
+                            key={index}
+                            className="rounded-lg p-3"
+                            style={{ backgroundColor: BRAND_COLORS.white }}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 
+                                className="font-medium text-sm"
+                                style={{ color: BRAND_COLORS.accent }}
+                              >
+                                {memory.memory_title || `Memory ${memory.memory_id}`}
+                              </h5>
+                              <span 
+                                className="text-xs px-2 py-1 rounded-full"
+                                style={{ 
+                                  backgroundColor: BRAND_COLORS.primary,
+                                  color: BRAND_COLORS.white
+                                }}
+                              >
+                                {memory.relevance_score}/10 relevance
+                              </span>
+                            </div>
+                            <p 
+                              className="text-xs mb-2"
+                              style={{ color: BRAND_COLORS.accent }}
+                            >
+                              {memory.connection}
+                            </p>
+                            <div 
+                              className="text-xs p-2 rounded"
+                              style={{ 
+                                backgroundColor: BRAND_COLORS.accentLight,
+                                color: BRAND_COLORS.accent
+                              }}
+                            >
+                              <strong>💭 "Look back at this memory where...</strong><br/>
+                              {memory.suggested_prompt}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {memorySuggestions.memory_suggestions.suggested_follow_up && (
+                        <div 
+                          className="mt-3 p-2 rounded"
+                          style={{ 
+                            backgroundColor: BRAND_COLORS.accentLight,
+                            border: `1px solid ${BRAND_COLORS.primary}`
+                          }}
+                        >
+                          <p 
+                            className="text-xs"
+                            style={{ color: BRAND_COLORS.accent }}
+                          >
+                            <strong>💡 Follow-up:</strong> {memorySuggestions.memory_suggestions.suggested_follow_up}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

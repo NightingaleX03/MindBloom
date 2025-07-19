@@ -138,4 +138,71 @@ async def simulate_analysis(
         })
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
+
+@router.post("/analyze-voice-response")
+async def analyze_voice_response(
+    audio_file: UploadFile = File(...),
+    question: str = Form(...),
+    patient_id: str = Form(...)
+):
+    """
+    Analyze voice response directly from audio file
+    """
+    try:
+        audio_data = await audio_file.read()
+        
+        # First analyze speech patterns
+        speech_analysis = await interview_analysis_service.analyze_speech_patterns(audio_data, patient_id)
+        
+        # For now, we'll use a placeholder transcription since we don't have speech-to-text in backend
+        # In a real implementation, you'd integrate with a speech-to-text service
+        placeholder_transcription = "Patient response to memory question about family traditions."
+        
+        # Then analyze the response content
+        response_analysis = await interview_analysis_service.analyze_response_to_question(
+            question, placeholder_transcription, patient_id
+        )
+        
+        # Find relevant memories
+        memory_suggestions = await interview_analysis_service.find_relevant_memories(
+            placeholder_transcription, patient_id, question
+        )
+        
+        # Combine all analyses
+        combined_analysis = {
+            "speech_analysis": speech_analysis,
+            "response_analysis": response_analysis,
+            "memory_suggestions": memory_suggestions,
+            "transcription": placeholder_transcription,
+            "question": question,
+            "patient_id": patient_id,
+            "timestamp": "2024-01-15T10:30:00Z"
+        }
+        
+        return JSONResponse(content=combined_analysis)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Voice analysis failed: {str(e)}")
+
+@router.post("/find-relevant-memories")
+async def find_relevant_memories(
+    current_response: str = Form(...),
+    question: str = Form(...),
+    patient_id: str = Form(...)
+):
+    """
+    Find existing memories that are relevant to the current response
+    """
+    try:
+        memory_suggestions = await interview_analysis_service.find_relevant_memories(
+            current_response, patient_id, question
+        )
+        
+        if 'error' in memory_suggestions:
+            raise HTTPException(status_code=400, detail=memory_suggestions['error'])
+        
+        return JSONResponse(content=memory_suggestions)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Memory search failed: {str(e)}") 
