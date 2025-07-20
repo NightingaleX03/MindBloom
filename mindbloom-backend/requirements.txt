@@ -13,4 +13,5 @@ speechrecognition==3.10.0
 numpy==2.3.1
 Pillow==10.4.0
 requests==2.31.0
-aiofiles==23.2.1 
+aiofiles==23.2.1
+PyJWT==2.8.0 
