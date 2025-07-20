@@ -38,11 +38,15 @@ class InterviewAnalysisService:
         self.model = None
         if GEMINI_AVAILABLE:
             try:
-                if 'genai' in globals():
+                # Check if genai is available in the global scope
+                if 'genai' in globals() and genai is not None:
                     self.model = genai.GenerativeModel('gemini-pro')
                 elif GEMINI_API_KEY:
                     # We'll use HTTP requests instead
                     self.model = "http"
+                else:
+                    print("Warning: Gemini not properly configured")
+                    self.model = None
             except Exception as e:
                 print(f"Warning: Could not initialize Gemini model: {e}")
                 self.model = None

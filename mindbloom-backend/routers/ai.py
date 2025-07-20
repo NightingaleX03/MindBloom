@@ -37,6 +37,20 @@ async def generate_conversation_response(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to generate response")
 
+@router.post("/conversation/test")
+async def generate_conversation_response_test(
+    request: ConversationRequest
+):
+    """Generate a compassionate AI response to user conversation (test endpoint without auth)"""
+    try:
+        response = await ai_service.generate_conversation_response(
+            request.message,
+            request.conversation_history
+        )
+        return {"response": response, "status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to generate response")
+
 @router.post("/image-analysis")
 async def analyze_image(
     file: UploadFile = File(...),
@@ -113,4 +127,25 @@ async def get_suggested_prompts(
     return {
         "prompts": prompts,
         "user_id": current_user.auth0_id
+    }
+
+@router.get("/prompts/suggested/test")
+async def get_suggested_prompts_test():
+    """Get a list of suggested memory prompts (test endpoint without auth)"""
+    prompts = [
+        "Tell me about your family",
+        "What's your favorite childhood memory?",
+        "Do you remember any special holidays?",
+        "Tell me about a place you love",
+        "What makes you happy?",
+        "Share a story about your friends",
+        "Do you remember a special meal?",
+        "Tell me about a time you laughed",
+        "What's your favorite season?",
+        "Do you remember learning something new?"
+    ]
+    
+    return {
+        "prompts": prompts,
+        "status": "success"
     } 

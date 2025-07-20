@@ -102,14 +102,31 @@ const AIChat = ({ selectedPatient }) => {
     ]);
   }, []);
 
-  const suggestedPrompts = [
+  const [suggestedPrompts, setSuggestedPrompts] = useState([
     "Tell me about your family",
     "What's your favorite childhood memory?",
     "Do you remember any special holidays?",
     "Tell me about a place you love",
     "What makes you happy?",
     "Share a story about your friends"
-  ];
+  ]);
+
+  // Fetch suggested prompts from API
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      try {
+        const response = await fetch('/api/ai/prompts/suggested/test');
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestedPrompts(data.prompts);
+        }
+      } catch (error) {
+        console.error('Error fetching prompts:', error);
+      }
+    };
+    
+    fetchPrompts();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -126,8 +143,32 @@ const AIChat = ({ selectedPatient }) => {
     setIsLoading(true);
 
     try {
-      // Simulate AI response (replace with actual API call)
-      setTimeout(() => {
+      // Call the actual AI API (using test endpoint for now)
+      const response = await fetch('/api/ai/conversation/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          conversation_history: messages.map(msg => ({
+            role: msg.type === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }))
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: data.response,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      } else {
+        // Fallback to mock response if API fails
         const aiResponse = {
           id: Date.now() + 1,
           type: 'ai',
@@ -135,10 +176,18 @@ const AIChat = ({ selectedPatient }) => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiResponse]);
-        setIsLoading(false);
-      }, 2000);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
+      // Fallback to mock response
+      const aiResponse = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: generateAIResponse(inputMessage),
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    } finally {
       setIsLoading(false);
     }
   };
