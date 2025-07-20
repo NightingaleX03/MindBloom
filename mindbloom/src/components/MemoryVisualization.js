@@ -7,6 +7,7 @@ import {
   ArrowPathIcon,
   PhotoIcon
 } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../config';
 
 const MemoryVisualization = ({ memory, onClose }) => {
   const [visualization, setVisualization] = useState(null);
@@ -40,7 +41,7 @@ const MemoryVisualization = ({ memory, onClose }) => {
       
       // Force regeneration by adding a timestamp to ensure fresh generation
       const timestamp = Date.now();
-      const response = await fetch(`http://localhost:8000/api/memories/${memory.id}/visualization?fresh=true&t=${timestamp}`);
+      const response = await fetch(`${API_BASE_URL}/api/memories/${memory.id}/visualization?fresh=true&t=${timestamp}`);
       
       if (!response.ok) {
         throw new Error(`Failed to generate visualization: ${response.status}`);

@@ -14,6 +14,7 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 import MemoryVisualization from './MemoryVisualization';
+import { API_BASE_URL } from '../config';
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -119,8 +120,7 @@ const MemoryJournal = ({ selectedPatient }) => {
     { value: 'story', label: 'Story', icon: HeartIcon }
   ];
 
-  // API base URL
-  const API_BASE_URL = 'http://localhost:8000';
+
 
   // Fetch memories from MongoDB database
   const fetchMemories = async () => {

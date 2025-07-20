@@ -12,6 +12,7 @@ import {
   XCircleIcon,
   StopIcon
 } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../config';
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -315,7 +316,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       formData.append('question', interviewQuestions[currentQuestion]);
       formData.append('patient_id', selectedPatient);
 
-      const response = await fetch('http://localhost:8000/api/interview-analysis/analyze-voice-response', {
+      const response = await fetch(`${API_BASE_URL}/api/interview-analysis/analyze-voice-response`, {
         method: 'POST',
         body: formData
       });
@@ -329,7 +330,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
         await createMemoryFromResponse(transcription, analysis);
         
         // Get real-time feedback
-        const feedbackResponse = await fetch('http://localhost:8000/api/interview-analysis/real-time-feedback', {
+        const feedbackResponse = await fetch(`${API_BASE_URL}/api/interview-analysis/real-time-feedback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -369,7 +370,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
         source: 'voice_interview'
       };
 
-      const response = await fetch('http://localhost:8000/api/memories/', {
+      const response = await fetch(`${API_BASE_URL}/api/memories/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -437,7 +438,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       console.log('Creating interview for patient:', selectedPatient);
       
       // Call the backend API directly
-      const response = await fetch(`http://localhost:8000/api/ribbon/memory-interview/${selectedPatient}`, {
+      const response = await fetch(`${API_BASE_URL}/api/ribbon/memory-interview/${selectedPatient}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -569,7 +570,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       formData.append('question', interviewQuestions[currentQuestion]);
       formData.append('patient_id', selectedPatient);
 
-      const response = await fetch('http://localhost:8000/api/interview-analysis/analyze-response', {
+      const response = await fetch(`${API_BASE_URL}/api/interview-analysis/analyze-response`, {
         method: 'POST',
         body: formData
       });
@@ -579,7 +580,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
         setAnalysisResults(analysis);
         
         // Get memory suggestions
-        const memoryResponse = await fetch('http://localhost:8000/api/interview-analysis/find-relevant-memories', {
+        const memoryResponse = await fetch(`${API_BASE_URL}/api/interview-analysis/find-relevant-memories`, {
           method: 'POST',
           body: formData
         });
@@ -590,7 +591,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
         }
         
         // Get real-time feedback
-        const feedbackResponse = await fetch('http://localhost:8000/api/interview-analysis/real-time-feedback', {
+        const feedbackResponse = await fetch(`${API_BASE_URL}/api/interview-analysis/real-time-feedback`, {
           method: 'POST',
           body: formData
         });
