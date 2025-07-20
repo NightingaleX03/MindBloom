@@ -347,7 +347,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       }
     } catch (error) {
       console.error('Voice analysis failed:', error);
-      // Fallback to text analysis
+      // Fallback to text analysis with memory suggestions
       await analyzeResponse(transcription);
     }
   };
@@ -578,6 +578,17 @@ const VoiceInterviews = ({ selectedPatient }) => {
         const analysis = await response.json();
         setAnalysisResults(analysis);
         
+        // Get memory suggestions
+        const memoryResponse = await fetch('http://localhost:8000/api/interview-analysis/find-relevant-memories', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (memoryResponse.ok) {
+          const memorySuggestions = await memoryResponse.json();
+          setMemorySuggestions(memorySuggestions);
+        }
+        
         // Get real-time feedback
         const feedbackResponse = await fetch('http://localhost:8000/api/interview-analysis/real-time-feedback', {
           method: 'POST',
@@ -591,7 +602,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
       }
     } catch (error) {
       console.error('Analysis failed:', error);
-      // Fallback to mock analysis
+      // Fallback to mock analysis with memory suggestions
       setAnalysisResults({
         analysis: {
           memory_recall_accuracy: 8.5,
@@ -615,6 +626,22 @@ const VoiceInterviews = ({ selectedPatient }) => {
             "Good word-finding abilities demonstrated"
           ]
         }
+      });
+      
+      // Mock memory suggestions
+      setMemorySuggestions({
+        relevant_memories: [
+          {
+            memory_id: "mock-1",
+            memory_title: "Family Dinner at Grandma's",
+            memory_content: "I remember the warm kitchen, the smell of fresh bread, and everyone laughing around the table...",
+            relevance_score: 8.5,
+            connection: "This memory about 'Family Dinner at Grandma's' also involves family, just like your current story.",
+            suggested_prompt: "Look back at this memory where you shared about 'Family Dinner at Grandma's' - what other family moments come to mind?"
+          }
+        ],
+        suggested_follow_up: "Can you tell me more about that?",
+        message: "Here are some past memories that may bring a smile to your face! Found 1 relevant memories."
       });
     } finally {
       setIsAnalyzing(false);
@@ -1312,7 +1339,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
                   </div>
 
                   {/* Memory Suggestions */}
-                  {memorySuggestions && memorySuggestions.memory_suggestions?.relevant_memories?.length > 0 && (
+                  {memorySuggestions && memorySuggestions.relevant_memories?.length > 0 && (
                     <div 
                       className="rounded-lg p-4"
                       style={{ backgroundColor: BRAND_COLORS.primaryLight }}
@@ -1321,10 +1348,10 @@ const VoiceInterviews = ({ selectedPatient }) => {
                         className="font-semibold mb-2"
                         style={{ color: BRAND_COLORS.accent }}
                       >
-                        📖 Related Memories:
+                        🌟 Here are some past memories that may bring a smile to your face:
                       </h4>
                       <div className="space-y-3">
-                        {memorySuggestions.memory_suggestions.relevant_memories.map((memory, index) => (
+                        {memorySuggestions.relevant_memories.map((memory, index) => (
                           <div 
                             key={index}
                             className="rounded-lg p-3"
@@ -1366,7 +1393,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
                           </div>
                         ))}
                       </div>
-                      {memorySuggestions.memory_suggestions.suggested_follow_up && (
+                      {memorySuggestions.suggested_follow_up && (
                         <div 
                           className="mt-3 p-2 rounded"
                           style={{ 
@@ -1378,7 +1405,7 @@ const VoiceInterviews = ({ selectedPatient }) => {
                             className="text-xs"
                             style={{ color: BRAND_COLORS.accent }}
                           >
-                            <strong>💡 Follow-up:</strong> {memorySuggestions.memory_suggestions.suggested_follow_up}
+                            <strong>💡 Follow-up:</strong> {memorySuggestions.suggested_follow_up}
                           </p>
                         </div>
                       )}

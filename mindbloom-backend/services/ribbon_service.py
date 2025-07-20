@@ -10,7 +10,10 @@ class RibbonService:
         self.base_url = "https://api.ribbon.ai"
         
         if not self.api_key:
-            raise ValueError("RIBBON_API_KEY environment variable is required")
+            print("⚠️ Warning: RIBBON_API_KEY not found. Ribbon service will use mock responses.")
+            self.api_key = "mock_key"
+        
+        print(f"🔑 Ribbon API Key: {'mock_key' if self.api_key == 'mock_key' else 'configured'}")
     
     async def create_interview_flow(self, flow_name: str, questions: List[str], patient_id: str) -> Dict:
         """Create a new interview flow for memory collection"""
@@ -43,6 +46,16 @@ class RibbonService:
             }
         }
         
+        # Return mock response if no API key
+        if self.api_key == "mock_key":
+            return {
+                "id": f"flow-{patient_id}",
+                "name": flow_data["name"],
+                "type": "general",
+                "questions": interview_questions,
+                "created_at": datetime.utcnow().isoformat()
+            }
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/interview-flows",
@@ -70,6 +83,18 @@ class RibbonService:
             }
         }
         
+        # Return mock response if no API key
+        print(f"🔍 API Key check in create_interview: {self.api_key}")
+        if self.api_key == "mock_key":
+            print(f"🎭 Using mock response for interview creation: {flow_id}")
+            return {
+                "id": f"interview-{flow_id}",
+                "flow_id": flow_id,
+                "status": "created",
+                "interview_url": f"https://ribbon.ai/interview/mock-{flow_id}",
+                "created_at": datetime.utcnow().isoformat()
+            }
+        
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/interviews",
@@ -88,6 +113,27 @@ class RibbonService:
     async def get_interview_results(self, interview_id: str) -> Dict:
         """Get the results of a completed interview"""
         
+        # Return mock response if no API key
+        if self.api_key == "mock_key":
+            print(f"🎭 Using mock response for interview results: {interview_id}")
+            return {
+                "interview_id": interview_id,
+                "status": "completed",
+                "responses": [
+                    {
+                        "question": "Can you tell me about a happy time from your childhood?",
+                        "answer": "I remember playing in the garden with my grandmother. She would always have cookies ready for me.",
+                        "timestamp": datetime.utcnow().isoformat()
+                    },
+                    {
+                        "question": "What's your favorite family tradition?",
+                        "answer": "Every Sunday we would have a big family dinner. Everyone would gather around the table.",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ],
+                "completed_at": datetime.utcnow().isoformat()
+            }
+        
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/interviews/{interview_id}/results",
@@ -103,6 +149,16 @@ class RibbonService:
     
     async def get_interview_status(self, interview_id: str) -> Dict:
         """Get the current status of an interview"""
+        
+        # Return mock response if no API key
+        if self.api_key == "mock_key":
+            print(f"🎭 Using mock response for interview status: {interview_id}")
+            return {
+                "interview_id": interview_id,
+                "status": "created",
+                "created_at": datetime.utcnow().isoformat(),
+                "url": f"https://ribbon.ai/interview/mock-{interview_id}"
+            }
         
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -146,6 +202,18 @@ class RibbonService:
                 "caregiver_notes": "Gentle memory prompts for dementia patients"
             }
         }
+        
+        # Return mock response if no API key
+        print(f"🔍 API Key check: {self.api_key}")
+        if self.api_key == "mock_key":
+            print(f"🎭 Using mock response for memory interview flow: {patient_id}")
+            return {
+                "id": f"flow-memory-{patient_id}",
+                "name": flow_data["name"],
+                "type": "general",
+                "questions": memory_questions,
+                "created_at": datetime.utcnow().isoformat()
+            }
         
         async with httpx.AsyncClient() as client:
             response = await client.post(

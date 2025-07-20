@@ -9,7 +9,9 @@ import {
   BookOpenIcon,
   TagIcon,
   EyeIcon,
-  UserIcon
+  UserIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon
 } from '@heroicons/react/24/outline';
 import MemoryVisualization from './MemoryVisualization';
 
@@ -82,6 +84,7 @@ const MindbloomLogo = ({ size = 'md' }) => {
 
 const MemoryJournal = ({ selectedPatient }) => {
   const [memories, setMemories] = useState([]);
+  const [filteredMemories, setFilteredMemories] = useState([]);
   const [showNewMemory, setShowNewMemory] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState(null);
   const [showVisualization, setShowVisualization] = useState(false);
@@ -94,6 +97,11 @@ const MemoryJournal = ({ selectedPatient }) => {
   });
   const [selectedMood, setSelectedMood] = useState('neutral');
   const [isRecording, setIsRecording] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMoodFilter, setSelectedMoodFilter] = useState('all');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
 
   const moods = [
     { value: 'happy', label: 'Happy', color: 'bg-yellow-100 text-yellow-800' },
@@ -101,7 +109,8 @@ const MemoryJournal = ({ selectedPatient }) => {
     { value: 'excited', label: 'Excited', color: 'bg-red-100 text-red-800' },
     { value: 'calm', label: 'Calm', color: 'bg-green-100 text-green-800' },
     { value: 'anxious', label: 'Anxious', color: 'bg-orange-100 text-orange-800' },
-    { value: 'neutral', label: 'Neutral', color: 'bg-gray-100 text-gray-800' }
+    { value: 'neutral', label: 'Neutral', color: 'bg-gray-100 text-gray-800' },
+    { value: 'nostalgic', label: 'Nostalgic', color: 'bg-pink-100 text-pink-800' }
   ];
 
   const memoryTypes = [
@@ -110,90 +119,145 @@ const MemoryJournal = ({ selectedPatient }) => {
     { value: 'story', label: 'Story', icon: HeartIcon }
   ];
 
-  // Mock data based on selected patient
-  useEffect(() => {
+  // API base URL
+  const API_BASE_URL = 'http://localhost:8000';
+
+  // Fetch memories from MongoDB database
+  const fetchMemories = async () => {
     if (!selectedPatient) {
       setMemories([]);
+      setFilteredMemories([]);
       return;
     }
 
-    // Different memories for different patients
-    const patientMemories = {
-      '1': [ // Sarah Johnson
-        {
-          id: 1,
-          title: "Family Dinner at Grandma's",
-          content: "Remember the wonderful dinner we had at grandma's house last Sunday? The smell of her famous apple pie filled the whole house. Everyone was laughing and sharing stories. It was such a warm, loving atmosphere that made me feel so grateful for my family.",
-          mood: "happy",
-          type: "memory",
-          tags: ["family", "grandma", "dinner", "apple pie"],
-          date: "2024-01-15",
-          isPinned: true,
-          patientId: "1"
-        },
-        {
-          id: 2,
-          title: "Walking in the Park",
-          content: "The beautiful spring day when we walked through the park and saw all the flowers blooming. The air was fresh and the birds were singing. It reminded me of simpler times when life was less complicated.",
-          mood: "calm",
-          type: "reflection",
-          tags: ["nature", "spring", "walking", "peaceful"],
-          date: "2024-01-14",
-          patientId: "1"
-        }
-      ],
-      '2': [ // Robert Smith
-        {
-          id: 3,
-          title: "Morning Coffee Ritual",
-          content: "Started the day with my usual cup of coffee on the porch. The birds were singing and the air was crisp. It reminded me of when I used to have coffee with my father every morning before work.",
-          mood: "calm",
-          type: "memory",
-          tags: ["coffee", "morning", "porch", "father"],
-          date: "2024-01-15",
-          isPinned: true,
-          patientId: "2"
-        },
-        {
-          id: 4,
-          title: "Old Photographs Found",
-          content: "Found some old photographs in the attic today. Looking at pictures from my wedding day brought back so many wonderful memories. My wife looked so beautiful in her white dress.",
-          mood: "nostalgic",
-          type: "reflection",
-          tags: ["photographs", "wedding", "wife", "nostalgic"],
-          date: "2024-01-14",
-          patientId: "2"
-        }
-      ],
-      '3': [ // Margaret Davis
-        {
-          id: 5,
-          title: "Feeling Lonely Today",
-          content: "Today was a difficult day. I miss my husband so much. The house feels so empty without him. I tried to distract myself by reading, but my mind kept wandering back to our happy times together.",
-          mood: "sad",
-          type: "reflection",
-          tags: ["husband", "lonely", "missing", "grief"],
-          date: "2024-01-15",
-          patientId: "3"
-        }
-      ]
-    };
+    setLoading(true);
+    setError(null);
 
-    setMemories(patientMemories[selectedPatient] || []);
+    try {
+      console.log(`Fetching memories for patient: ${selectedPatient}`);
+      const response = await fetch(`${API_BASE_URL}/api/memories?patient_id=${selectedPatient}`);
+      
+      console.log(`Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Received data:', data);
+      
+      // Transform the data to match the frontend structure
+      const transformedMemories = data.map(memory => ({
+        id: memory._id || memory.id,
+        title: memory.title || 'Untitled Memory',
+        content: memory.description || memory.content || '',
+        mood: memory.mood || 'neutral',
+        type: memory.category || 'memory',
+        tags: memory.tags || [],
+        date: memory.created_at ? new Date(memory.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        isPinned: memory.is_pinned || false,
+        patientId: memory.patient_id || selectedPatient
+      }));
+
+      setMemories(transformedMemories);
+      setFilteredMemories(transformedMemories);
+    } catch (error) {
+      console.error('Error fetching memories:', error);
+      setError(`Failed to load memories: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter memories based on search term and filters
+  useEffect(() => {
+    let filtered = memories;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(memory =>
+        memory.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memory.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memory.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filter by mood
+    if (selectedMoodFilter !== 'all') {
+      filtered = filtered.filter(memory => memory.mood === selectedMoodFilter);
+    }
+
+    // Filter by type
+    if (selectedTypeFilter !== 'all') {
+      filtered = filtered.filter(memory => memory.type === selectedTypeFilter);
+    }
+
+    setFilteredMemories(filtered);
+  }, [memories, searchTerm, selectedMoodFilter, selectedTypeFilter]);
+
+  // Create new memory in MongoDB
+  const createMemory = async (memoryData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/memories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: memoryData.title,
+          description: memoryData.content,
+          mood: memoryData.mood,
+          category: memoryData.type,
+          tags: memoryData.tags,
+          patient_id: selectedPatient,
+          user_id: selectedPatient
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newMemory = await response.json();
+      
+      // Add the new memory to the list
+      const transformedMemory = {
+        id: newMemory._id || newMemory.id,
+        title: newMemory.title || 'Untitled Memory',
+        content: newMemory.description || newMemory.content || '',
+        mood: newMemory.mood || 'neutral',
+        type: newMemory.category || 'memory',
+        tags: newMemory.tags || [],
+        date: newMemory.created_at ? new Date(newMemory.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        isPinned: newMemory.is_pinned || false,
+        patientId: newMemory.patient_id || selectedPatient
+      };
+
+      setMemories([transformedMemory, ...memories]);
+      return true;
+    } catch (error) {
+      console.error('Error creating memory:', error);
+      setError('Failed to create memory. Please try again.');
+      return false;
+    }
+  };
+
+  // Load memories when patient changes
+  useEffect(() => {
+    fetchMemories();
   }, [selectedPatient]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const memory = {
-      id: Date.now(),
-      ...newMemory,
-      date: new Date().toISOString().split('T')[0],
-      isPinned: false,
-      patientId: selectedPatient
-    };
-    setMemories([memory, ...memories]);
-    setNewMemory({ title: '', content: '', mood: 'neutral', tags: [], type: 'memory' });
-    setShowNewMemory(false);
+    
+    const success = await createMemory(newMemory);
+    
+    if (success) {
+      setNewMemory({ title: '', content: '', mood: 'neutral', tags: [], type: 'memory' });
+      setShowNewMemory(false);
+    }
   };
 
   const handleVoiceInput = () => {
@@ -232,6 +296,12 @@ const MemoryJournal = ({ selectedPatient }) => {
       nostalgic: 'text-pink-600'
     };
     return colors[mood] || colors.neutral;
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedMoodFilter('all');
+    setSelectedTypeFilter('all');
   };
 
   if (!selectedPatient) {
@@ -322,6 +392,13 @@ const MemoryJournal = ({ selectedPatient }) => {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
 
       {/* New Memory Form */}
       {showNewMemory && (
@@ -456,73 +533,154 @@ const MemoryJournal = ({ selectedPatient }) => {
         </div>
       )}
 
-      {/* Memories List */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          {selectedPatient === '1' ? 'Sarah' : 
-           selectedPatient === '2' ? 'Robert' : 'Margaret'}'s Memories
-        </h2>
-        
-        <div className="space-y-6">
-          {memories.map((memory) => (
-            <div
-              key={memory.id}
-              className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {memory.title}
-                    </h3>
-                    {memory.isPinned && (
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                        Pinned
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-700 leading-relaxed mb-3">
-                    {memory.content}
-                  </p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>{new Date(memory.date).toLocaleDateString()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMoodColor(memory.mood)}`}>
-                      {memory.mood}
-                    </span>
-                    <span className="capitalize">{memory.type}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleViewVisualization(memory)}
-                    className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
-                    title="View AI Visualization"
-                  >
-                    <EyeIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Tags */}
-              {memory.tags.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <TagIcon className="h-4 w-4 text-gray-400" />
-                  <div className="flex flex-wrap gap-2">
-                    {memory.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {selectedPatient === '1' ? 'Sarah' : 
+             selectedPatient === '2' ? 'Robert' : 'Margaret'}'s Memories
+          </h2>
+          
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">
+              {filteredMemories.length} of {memories.length} memories
+            </span>
+            {(searchTerm || selectedMoodFilter !== 'all' || selectedTypeFilter !== 'all') && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-purple-600 hover:text-purple-700"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search memories by title, content, or tags..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-600 focus:outline-none"
+          />
+        </div>
+
+        {/* Filter Options */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          {/* Mood Filter */}
+          <div className="flex items-center space-x-2">
+            <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <select
+              value={selectedMoodFilter}
+              onChange={(e) => setSelectedMoodFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+            >
+              <option value="all">All Moods</option>
+              {moods.map((mood) => (
+                <option key={mood.value} value={mood.value}>
+                  {mood.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Type Filter */}
+          <div className="flex items-center space-x-2">
+            <BookOpenIcon className="h-5 w-5 text-gray-400" />
+            <select
+              value={selectedTypeFilter}
+              onChange={(e) => setSelectedTypeFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+            >
+              <option value="all">All Types</option>
+              {memoryTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading memories...</p>
+          </div>
+        ) : filteredMemories.length === 0 ? (
+          <div className="text-center py-8">
+            <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">
+              {searchTerm || selectedMoodFilter !== 'all' || selectedTypeFilter !== 'all'
+                ? 'No memories match your search criteria.'
+                : 'No memories yet. Create your first memory!'}
+            </p>
+          </div>
+        ) : (
+          <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+            {filteredMemories.map((memory) => (
+              <div
+                key={memory.id}
+                className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {memory.title}
+                      </h3>
+                      {memory.isPinned && (
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                          Pinned
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-700 leading-relaxed mb-3">
+                      {memory.content}
+                    </p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>{new Date(memory.date).toLocaleDateString()}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMoodColor(memory.mood)}`}>
+                        {memory.mood}
+                      </span>
+                      <span className="capitalize">{memory.type}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleViewVisualization(memory)}
+                      className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
+                      title="View AI Visualization"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                {memory.tags.length > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <TagIcon className="h-4 w-4 text-gray-400" />
+                    <div className="flex flex-wrap gap-2">
+                      {memory.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* AI Visualization Modal */}

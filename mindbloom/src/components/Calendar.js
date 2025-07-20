@@ -51,7 +51,7 @@ const Calendar = ({ selectedPatient }) => {
     { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
   ];
 
-  // Load events from localStorage and backend
+  // Load events from MongoDB database
   useEffect(() => {
     if (!selectedPatient) {
       setEvents([]);
@@ -60,23 +60,40 @@ const Calendar = ({ selectedPatient }) => {
 
     const loadEvents = async () => {
       try {
-        // Try to load from backend first
-        const response = await fetch(`/api/calendar?user_id=${selectedPatient}`);
+        console.log(`Loading events for patient: ${selectedPatient}`);
+        // Load from backend API
+        const response = await fetch(`http://localhost:8000/api/calendar?patient_id=${selectedPatient}`);
+        
+        console.log(`Response status: ${response.status}`);
+        
         if (response.ok) {
           const backendEvents = await response.json();
-          setEvents(backendEvents);
-          // Save to localStorage as backup
-          localStorage.setItem(`calendar-events-${selectedPatient}`, JSON.stringify(backendEvents));
+          console.log('Received events:', backendEvents);
+          
+          // Transform the data to match the frontend structure
+          const transformedEvents = backendEvents.map(event => ({
+            id: event._id || event.id,
+            title: event.title || 'Untitled Event',
+            description: event.description || '',
+            type: event.event_type || 'activity',
+            startTime: event.start_time || '09:00',
+            endTime: event.end_time || '10:00',
+            priority: event.priority || 'medium',
+            completed: event.completed || false,
+            date: event.date || new Date().toISOString().split('T')[0],
+            patientId: event.patient_id || selectedPatient,
+            recurring: event.recurring || false
+          }));
+          
+          setEvents(transformedEvents);
         } else {
-          // Fallback to localStorage
-          const savedEvents = JSON.parse(localStorage.getItem(`calendar-events-${selectedPatient}`) || '[]');
-          setEvents(savedEvents);
+          const errorText = await response.text();
+          console.error('Failed to load events from backend:', errorText);
+          setEvents([]);
         }
       } catch (error) {
         console.error('Error loading events:', error);
-        // Fallback to localStorage
-        const savedEvents = JSON.parse(localStorage.getItem(`calendar-events-${selectedPatient}`) || '[]');
-        setEvents(savedEvents);
+        setEvents([]);
       }
     };
 
@@ -825,44 +842,61 @@ const Calendar = ({ selectedPatient }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const event = {
-      id: Date.now(),
-      ...newEvent,
+    const eventData = {
+      title: newEvent.title,
+      description: newEvent.description,
+      event_type: newEvent.type,
+      start_time: newEvent.startTime,
+      end_time: newEvent.endTime,
+      priority: newEvent.priority,
       date: selectedDate.toISOString().split('T')[0],
       completed: false,
-      patientId: selectedPatient
+      patient_id: selectedPatient,
+      user_id: selectedPatient
     };
 
     try {
       // Save to backend API
-      const response = await fetch('/api/calendar', {
+      const response = await fetch('http://localhost:8000/api/calendar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(event)
+        body: JSON.stringify(eventData)
       });
 
       if (response.ok) {
-        // Add to local state
-    setEvents([...events, event]);
+        const savedEvent = await response.json();
         
-        // Save to localStorage as backup
-        const savedEvents = JSON.parse(localStorage.getItem(`calendar-events-${selectedPatient}`) || '[]');
-        savedEvents.push(event);
-        localStorage.setItem(`calendar-events-${selectedPatient}`, JSON.stringify(savedEvents));
+        // Transform the saved event to match frontend structure
+        const transformedEvent = {
+          id: savedEvent._id || savedEvent.id,
+          title: savedEvent.title || 'Untitled Event',
+          description: savedEvent.description || '',
+          type: savedEvent.event_type || 'activity',
+          startTime: savedEvent.start_time || '09:00',
+          endTime: savedEvent.end_time || '10:00',
+          priority: savedEvent.priority || 'medium',
+          completed: savedEvent.completed || false,
+          date: savedEvent.date || new Date().toISOString().split('T')[0],
+          patientId: savedEvent.patient_id || selectedPatient,
+          recurring: savedEvent.recurring || false
+        };
+        
+        // Add to local state
+        setEvents([...events, transformedEvent]);
         
         // Reset form
-    setNewEvent({
-      title: '',
-      description: '',
-      type: 'activity',
-      startTime: '',
-      endTime: '',
-      priority: 'medium',
-      reminders: []
-    });
-    setShowNewEvent(false);
+        setNewEvent({
+          title: '',
+          description: '',
+          type: 'activity',
+          startTime: '',
+          endTime: '',
+          priority: 'medium',
+          reminders: []
+        });
+        setShowNewEvent(false);
         
         // Show success message
         alert('Event saved successfully!');
@@ -871,26 +905,7 @@ const Calendar = ({ selectedPatient }) => {
       }
     } catch (error) {
       console.error('Error saving event:', error);
-      
-      // Fallback: save to localStorage only
-      setEvents([...events, event]);
-      const savedEvents = JSON.parse(localStorage.getItem(`calendar-events-${selectedPatient}`) || '[]');
-      savedEvents.push(event);
-      localStorage.setItem(`calendar-events-${selectedPatient}`, JSON.stringify(savedEvents));
-      
-      // Reset form
-      setNewEvent({
-        title: '',
-        description: '',
-        type: 'activity',
-        startTime: '',
-        endTime: '',
-        priority: 'medium',
-        reminders: []
-      });
-      setShowNewEvent(false);
-      
-      alert('Event saved locally (backend unavailable)');
+      alert('Failed to save event. Please try again.');
     }
   };
 
@@ -901,22 +916,24 @@ const Calendar = ({ selectedPatient }) => {
     
     setEvents(updatedEvents);
     
-    // Save updated events to localStorage
-    localStorage.setItem(`calendar-events-${selectedPatient}`, JSON.stringify(updatedEvents));
-    
     // Try to update on backend
     try {
       const eventToUpdate = updatedEvents.find(event => event.id === eventId);
-      await fetch(`/api/calendar/${eventId}`, {
+      const response = await fetch(`http://localhost:8000/api/calendar/${eventId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(eventToUpdate)
+        body: JSON.stringify({
+          completed: eventToUpdate.completed
+        })
       });
+      
+      if (!response.ok) {
+        console.error('Failed to update event on backend');
+      }
     } catch (error) {
       console.error('Error updating event on backend:', error);
-      // Event is already saved locally, so no user notification needed
     }
   };
 

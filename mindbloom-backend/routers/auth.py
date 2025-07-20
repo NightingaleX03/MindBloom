@@ -8,14 +8,14 @@ from datetime import datetime
 
 from models.user import User, UserCreate, UserUpdate, UserResponse, UserRole
 from services.auth_service import SimpleAuthService
+from database import Database, Collections
 
 router = APIRouter()
 security = HTTPBearer()
 auth_service = SimpleAuthService()
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncIOMotorDatabase = Depends(lambda: None)  # Will be injected
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """Verify JWT token and return current user"""
     try:
@@ -28,8 +28,11 @@ async def get_current_user(
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
+        # Get database instance
+        db = Database.get_db()
+        
         # Get user from database
-        user_data = await db.users.find_one({"auth0_id": user_id})
+        user_data = await db[Collections.USERS].find_one({"auth0_id": user_id})
         if not user_data:
             # Create user if they don't exist
             user_info = await auth_service.get_user_info(token)
@@ -41,7 +44,7 @@ async def get_current_user(
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
-            await db.users.insert_one(user_data)
+            await db[Collections.USERS].insert_one(user_data)
         
         return User(**user_data)
         
@@ -50,9 +53,9 @@ async def get_current_user(
     except Exception as e:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-async def get_db(request: Request) -> AsyncIOMotorDatabase:
-    """Get database instance from request"""
-    return request.app.mongodb
+async def get_db() -> AsyncIOMotorDatabase:
+    """Get database instance"""
+    return Database.get_db()
 
 @router.post("/register", response_model=UserResponse)
 async def register_user(
@@ -61,7 +64,7 @@ async def register_user(
 ):
     """Register a new user"""
     # Check if user already exists
-    existing_user = await db.users.find_one({"auth0_id": user_data.auth0_id})
+    existing_user = await db[Collections.USERS].find_one({"auth0_id": user_data.auth0_id})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
     
@@ -70,7 +73,7 @@ async def register_user(
     user_dict["created_at"] = datetime.utcnow()
     user_dict["updated_at"] = datetime.utcnow()
     
-    result = await db.users.insert_one(user_dict)
+    result = await db[Collections.USERS].insert_one(user_dict)
     user_dict["_id"] = str(result.inserted_id)
     
     return UserResponse(**user_dict)
@@ -93,13 +96,13 @@ async def update_user_profile(
     update_data = user_update.dict(exclude_unset=True)
     update_data["updated_at"] = datetime.utcnow()
     
-    await db.users.update_one(
+    await db[Collections.USERS].update_one(
         {"_id": current_user.id},
         {"$set": update_data}
     )
     
     # Get updated user
-    updated_user = await db.users.find_one({"_id": current_user.id})
+    updated_user = await db[Collections.USERS].find_one({"_id": current_user.id})
     return UserResponse(**updated_user)
 
 @router.get("/users", response_model=List[UserResponse])
@@ -112,7 +115,7 @@ async def get_users(
         raise HTTPException(status_code=403, detail="Admin access required")
     
     users = []
-    async for user in db.users.find():
+    async for user in db[Collections.USERS].find():
         user["_id"] = str(user["_id"])
         users.append(UserResponse(**user))
     
@@ -130,13 +133,13 @@ async def assign_caregiver(
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     # Update patient's caregiver_id
-    await db.users.update_one(
+    await db[Collections.USERS].update_one(
         {"auth0_id": patient_id},
         {"$set": {"caregiver_id": caregiver_id, "updated_at": datetime.utcnow()}}
     )
     
     # Add patient to caregiver's patients list
-    await db.users.update_one(
+    await db[Collections.USERS].update_one(
         {"auth0_id": caregiver_id},
         {"$addToSet": {"patients": patient_id}, "$set": {"updated_at": datetime.utcnow()}}
     )
@@ -154,7 +157,7 @@ async def get_caregiver_patients(
     
     patients = []
     for patient_id in current_user.patients:
-        patient = await db.users.find_one({"auth0_id": patient_id})
+        patient = await db[Collections.USERS].find_one({"auth0_id": patient_id})
         if patient:
             patient["_id"] = str(patient["_id"])
             patients.append(UserResponse(**patient))

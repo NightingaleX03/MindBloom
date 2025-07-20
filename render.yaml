@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: mindbloom-backend
+    env: python
+    buildCommand: cd mindbloom-backend && pip install -r requirements.txt
+    startCommand: cd mindbloom-backend && python main.py
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RIBBON_API_KEY
+        sync: false
+
+  - type: web
+    name: mindbloom-frontend
+    env: static
+    buildCommand: cd mindbloom && npm install && npm run build
+    staticPublishPath: mindbloom/build
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: /mindbloom-backend/* 

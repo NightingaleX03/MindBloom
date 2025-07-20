@@ -9,6 +9,8 @@ from models.user import User
 from routers.auth import get_current_user, get_db
 from services.ribbon_service import RibbonService
 
+
+
 router = APIRouter()
 ribbon_service = RibbonService()
 
@@ -160,55 +162,42 @@ async def get_interview_results(
         raise HTTPException(status_code=500, detail=f"Failed to process interview results: {str(e)}")
 
 @router.post("/memory-interview/{patient_id}")
-async def create_memory_interview(
-    patient_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncIOMotorDatabase = Depends(get_db)
-):
+async def create_memory_interview(patient_id: str):
     """Create a specialized memory interview for dementia patients"""
     try:
-        # Get patient name from database
-        patient_data = await db.patients.find_one({"patient_id": patient_id})
-        patient_name = patient_data.get("name", f"Patient {patient_id}") if patient_data else f"Patient {patient_id}"
+        # Get patient name (mock for demo)
+        patient_name = f"Patient {patient_id}"
         
-        # Create memory interview flow
-        flow_data = await ribbon_service.create_memory_interview_flow(patient_id, patient_name)
-        
-        # Create interview session
-        interview_data = await ribbon_service.create_interview(
-            flow_data.get("id"),
-            patient_name
-        )
-        
-        # Store both flow and interview metadata
-        flow_metadata = {
-            "flow_id": flow_data.get("id"),
-            "name": flow_data.get("name"),
-            "patient_id": patient_id,
-            "patient_name": patient_name,
-            "created_by": current_user.auth0_id,
-            "created_at": datetime.utcnow(),
-            "type": "memory_interview"
+        # Create mock flow and interview data
+        flow_data = {
+            "id": f"flow-memory-{patient_id}",
+            "name": f"Memory Interview - {patient_name}",
+            "type": "general",
+            "questions": [
+                "Hello! I'm here to help you share some special memories. Can you tell me about a happy time from your childhood?",
+                "That sounds wonderful! Do you remember any special family traditions that you loved?",
+                "I'd love to hear about a place that made you feel peaceful and happy. Can you describe it?",
+                "Tell me about someone who was very kind and caring in your life.",
+                "What's a story or memory that always makes you smile when you think about it?"
+            ],
+            "created_at": datetime.utcnow().isoformat()
         }
         
-        interview_metadata = {
-            "interview_id": interview_data.get("id"),
-            "flow_id": flow_data.get("id"),
-            "patient_id": patient_id,
-            "patient_name": patient_name,
-            "created_by": current_user.auth0_id,
-            "created_at": datetime.utcnow(),
-            "status": "created"
+        interview_data = {
+            "id": f"interview-{patient_id}",
+            "flow_id": flow_data["id"],
+            "status": "created",
+            "interview_url": f"https://ribbon.ai/interview/mock-{patient_id}",
+            "created_at": datetime.utcnow().isoformat()
         }
         
-        await db.interview_flows.insert_one(flow_metadata)
-        await db.interviews.insert_one(interview_metadata)
+        print(f"🎭 Created mock interview for patient {patient_id}")
         
         return {
             "message": "Memory interview created successfully",
             "flow": flow_data,
             "interview": interview_data,
-            "interview_url": interview_data.get("url"),
+            "interview_url": interview_data.get("interview_url"),
             "patient_name": patient_name
         }
     except Exception as e:

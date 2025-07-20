@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  mindbloom-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RIBBON_API_KEY=${RIBBON_API_KEY}
+    volumes:
+      - ./mindbloom-backend:/app
+    restart: unless-stopped
+
+  mindbloom-frontend:
+    build:
+      context: ./mindbloom
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mindbloom-backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    volumes:
+      - ./mindbloom:/app
+      - /app/node_modules
+    restart: unless-stopped 

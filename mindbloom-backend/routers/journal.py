@@ -8,6 +8,7 @@ from models.journal import Journal, JournalCreate, JournalUpdate, JournalRespons
 from models.user import User, UserRole
 from routers.auth import get_current_user, get_db
 from services.ai_service import AIService
+from database import Collections
 
 router = APIRouter()
 ai_service = AIService()
@@ -35,7 +36,7 @@ async def create_journal_entry(
         # Continue without AI insights if service fails
         pass
     
-    result = await db.journals.insert_one(journal_dict)
+    result = await db[Collections.JOURNALS].insert_one(journal_dict)
     journal_dict["_id"] = str(result.inserted_id)
     
     return JournalResponse(**journal_dict)
@@ -55,7 +56,7 @@ async def get_journal_entries(
         query["is_pinned"] = True
     
     journals = []
-    cursor = db.journals.find(query).skip(skip).limit(limit).sort("created_at", -1)
+    cursor = db[Collections.JOURNALS].find(query).skip(skip).limit(limit).sort("created_at", -1)
     
     async for journal in cursor:
         journal["_id"] = str(journal["_id"])
@@ -70,7 +71,7 @@ async def get_journal_entry(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get a specific journal entry"""
-    journal = await db.journals.find_one({"_id": journal_id, "user_id": current_user.auth0_id})
+    journal = await db[Collections.JOURNALS].find_one({"_id": journal_id, "user_id": current_user.auth0_id})
     
     if not journal:
         raise HTTPException(status_code=404, detail="Journal entry not found")
@@ -87,7 +88,7 @@ async def update_journal_entry(
 ):
     """Update a journal entry"""
     # Check if journal exists and belongs to user
-    existing_journal = await db.journals.find_one({"_id": journal_id, "user_id": current_user.auth0_id})
+    existing_journal = await db[Collections.JOURNALS].find_one({"_id": journal_id, "user_id": current_user.auth0_id})
     if not existing_journal:
         raise HTTPException(status_code=404, detail="Journal entry not found")
     
@@ -106,13 +107,13 @@ async def update_journal_entry(
             # Continue without AI insights if service fails
             pass
     
-    await db.journals.update_one(
+    await db[Collections.JOURNALS].update_one(
         {"_id": journal_id},
         {"$set": update_data}
     )
     
     # Get updated journal
-    updated_journal = await db.journals.find_one({"_id": journal_id})
+    updated_journal = await db[Collections.JOURNALS].find_one({"_id": journal_id})
     updated_journal["_id"] = str(updated_journal["_id"])
     
     return JournalResponse(**updated_journal)
@@ -124,7 +125,7 @@ async def delete_journal_entry(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete a journal entry"""
-    result = await db.journals.delete_one({"_id": journal_id, "user_id": current_user.auth0_id})
+    result = await db[Collections.JOURNALS].delete_one({"_id": journal_id, "user_id": current_user.auth0_id})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Journal entry not found")
@@ -138,14 +139,14 @@ async def pin_journal_entry(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Pin or unpin a journal entry"""
-    journal = await db.journals.find_one({"_id": journal_id, "user_id": current_user.auth0_id})
+    journal = await db[Collections.JOURNALS].find_one({"_id": journal_id, "user_id": current_user.auth0_id})
     
     if not journal:
         raise HTTPException(status_code=404, detail="Journal entry not found")
     
     new_pinned_status = not journal.get("is_pinned", False)
     
-    await db.journals.update_one(
+    await db[Collections.JOURNALS].update_one(
         {"_id": journal_id},
         {"$set": {"is_pinned": new_pinned_status, "updated_at": datetime.utcnow()}}
     )
@@ -169,7 +170,7 @@ async def get_patient_journals(
         raise HTTPException(status_code=403, detail="Access to patient denied")
     
     journals = []
-    cursor = db.journals.find({"user_id": patient_id}).skip(skip).limit(limit).sort("created_at", -1)
+    cursor = db[Collections.JOURNALS].find({"user_id": patient_id}).skip(skip).limit(limit).sort("created_at", -1)
     
     async for journal in cursor:
         journal["_id"] = str(journal["_id"])
