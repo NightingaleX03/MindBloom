@@ -201,32 +201,9 @@ npm test
 3. Configure environment variables
 4. Set up Auth0 application
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## 📄 License
 
 This project is licensed under the ISC License.
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for AI capabilities
-- Auth0 for secure authentication
-- Three.js for 3D visualization
-- MongoDB for database management
-- React and Node.js communities
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
 
 ---
 
