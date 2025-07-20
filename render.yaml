@@ -3,7 +3,7 @@ services:
     name: mindbloom-backend
     env: python
     buildCommand: cd mindbloom-backend && pip install -r requirements.txt
-    startCommand: cd mindbloom-backend && python main.py
+    startCommand: cd mindbloom-backend && python start_server.py
     envVars:
       - key: MONGODB_URI
         sync: false
