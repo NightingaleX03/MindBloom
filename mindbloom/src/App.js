@@ -306,7 +306,7 @@ function App() {
             )}
 
             {/* Content based on active tab */}
-            {activeTab === 'dashboard' && <Dashboard selectedPatient={selectedPatient} />}
+            {activeTab === 'dashboard' && <Dashboard selectedPatient={selectedPatient} onTabChange={handleTabChange} />}
             {activeTab === 'caregiver' && <CaregiverDashboard />}
             {activeTab === 'journal' && selectedPatient && <MemoryJournal selectedPatient={selectedPatient} />}
             {activeTab === 'garden' && selectedPatient && <MemoryGarden selectedPatient={selectedPatient} />}

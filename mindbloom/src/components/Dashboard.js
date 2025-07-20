@@ -80,11 +80,30 @@ const MindbloomLogo = ({ size = 'md' }) => {
   );
 };
 
-const Dashboard = ({ selectedPatient }) => {
+const Dashboard = ({ selectedPatient, onTabChange }) => {
   const { user } = useAuth0();
   const [recentMemories, setRecentMemories] = useState([]);
   const [todayEvents, setTodayEvents] = useState([]);
   const [aiPrompt, setAiPrompt] = useState('');
+
+  const handleEventComplete = (eventId) => {
+    setTodayEvents(prevEvents => 
+      prevEvents.map(event => 
+        event.id === eventId 
+          ? { ...event, completed: !event.completed }
+          : event
+      )
+    );
+  };
+
+  const handleNavigation = (tabId) => {
+    // Check if patient is selected for tabs that require it
+    if (!selectedPatient && ['journal', 'garden', 'calendar', 'chat'].includes(tabId)) {
+      alert('Please select a patient first to access this feature.');
+      return;
+    }
+    onTabChange(tabId);
+  };
 
   // Mock data for demonstration
   useEffect(() => {
@@ -134,25 +153,25 @@ const Dashboard = ({ selectedPatient }) => {
     {
       name: 'Add Memory',
       icon: PlusIcon,
-      href: '/journal',
+      tabId: 'journal',
       description: 'Record a new memory or experience'
     },
     {
       name: 'Chat with AI',
       icon: ChatBubbleLeftRightIcon,
-      href: '/ai-chat',
+      tabId: 'chat',
       description: 'Talk to your AI companion'
     },
     {
       name: 'Visit Garden',
       icon: CubeIcon,
-      href: '/garden',
+      tabId: 'garden',
       description: 'Explore your 3D memory garden'
     },
     {
       name: 'View Calendar',
       icon: CalendarIcon,
-      href: '/calendar',
+      tabId: 'calendar',
       description: 'Check your daily schedule'
     }
   ];
@@ -225,6 +244,7 @@ const Dashboard = ({ selectedPatient }) => {
             "Do you remember a special moment with your family? Maybe a holiday celebration or a simple dinner together?"
           </p>
           <button 
+            onClick={() => handleNavigation('journal')}
             className="px-6 py-3 rounded-lg transition-colors text-lg"
             style={{
               backgroundColor: BRAND_COLORS.primary,
@@ -249,10 +269,10 @@ const Dashboard = ({ selectedPatient }) => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
-            <a
+            <button
               key={action.name}
-              href={action.href}
-              className="group block"
+              onClick={() => handleNavigation(action.tabId)}
+              className="group block w-full text-left"
             >
               <div 
                 className="rounded-xl p-6 text-white transition-all transform group-hover:scale-105"
@@ -264,7 +284,7 @@ const Dashboard = ({ selectedPatient }) => {
                 <h3 className="text-xl font-semibold mb-2">{action.name}</h3>
                 <p className="text-sm opacity-90">{action.description}</p>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>
@@ -311,6 +331,7 @@ const Dashboard = ({ selectedPatient }) => {
                 </div>
               </div>
               <button
+                onClick={() => handleEventComplete(event.id)}
                 className="px-4 py-2 rounded-lg text-sm font-medium"
                 style={{
                   backgroundColor: event.completed ? BRAND_COLORS.primaryLight : BRAND_COLORS.accentLight,
@@ -342,13 +363,13 @@ const Dashboard = ({ selectedPatient }) => {
               Recent Memories
             </h2>
           </div>
-          <a
-            href="/journal"
+          <button
+            onClick={() => handleNavigation('journal')}
             className="font-medium"
             style={{ color: BRAND_COLORS.primary }}
           >
             View All →
-          </a>
+          </button>
         </div>
         <div className="space-y-6">
           {recentMemories.map((memory) => (
@@ -382,6 +403,7 @@ const Dashboard = ({ selectedPatient }) => {
                   {new Date(memory.date).toLocaleDateString()}
                 </span>
                 <button 
+                  onClick={() => handleNavigation('journal')}
                   className="font-medium"
                   style={{ color: BRAND_COLORS.primary }}
                 >

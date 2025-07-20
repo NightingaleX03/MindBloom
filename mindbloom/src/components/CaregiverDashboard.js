@@ -616,39 +616,6 @@ const CaregiverDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Quick Actions
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <button className="p-6 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-center">
-            <HeartIcon className="h-8 w-8 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold">Send Encouragement</h3>
-            <p className="text-purple-100 text-sm">Send a supportive message</p>
-          </button>
-
-          <button className="p-6 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-center">
-            <ClockIcon className="h-8 w-8 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold">Schedule Check-in</h3>
-            <p className="text-blue-100 text-sm">Set up a video call</p>
-          </button>
-
-          <button className="p-6 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-center">
-            <SparklesIcon className="h-8 w-8 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold">Generate Prompts</h3>
-            <p className="text-green-100 text-sm">Create memory prompts</p>
-          </button>
-
-          <button className="p-6 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors text-center">
-            <ChartBarIcon className="h-8 w-8 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold">View Reports</h3>
-            <p className="text-orange-100 text-sm">Detailed analytics</p>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
